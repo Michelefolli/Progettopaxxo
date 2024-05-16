@@ -41,10 +41,10 @@ double norm_v(Boid const& B) {
   return std::sqrt(std::pow(B.v_x, 2) + std::pow(B.v_y, 2));
 }
 
-/* distanza tra due boid, utilità da definire :
+// distanza tra due boid, utilità da definire :
 double abs_distance(Boid const& A, Boid const& B) {
   return std::sqrt(std::pow((A.x - B.x), 2) + std::pow((A.y - B.y), 2));
-}*/
+}
 
 // funzione statistica:
 Stats Sim::statistics() {
@@ -69,7 +69,24 @@ Stats Sim::statistics() {
                                          std::pow((norm_v(B) - v_media), 2);
                                 })) /
       std::sqrt(N);  // deviazione standard della velocità, DA TESTARE
-  double d_media{};  // distanza media che qualcuno mi dovrà spiegare
+
+  auto d_media_calc =
+      [this]() {  // this è per avere stormo_ come variabile all'interno
+        double res{};
+        double N_distances{};
+        for (size_t i{}; i != stormo_.size(); ++i) {
+          for (size_t j = i + 1; j != stormo_.size(); ++j) {
+            res += abs_distance(stormo_[i], stormo_[j]);
+            ++N_distances;
+          }
+        }
+        return res / N_distances;
+      };
+  double d_media =
+      d_media_calc();  // distanza media non è detto che funzioni. L'ho
+                       // calcolata con un doppio for loop che praticamente fa
+                       // tutte le combinazioni di distanze e poi divide per il
+                       // numero di combinazioni
   double sigma_d{};  // uguale
 
   return {v_media, d_media, sigma_v,

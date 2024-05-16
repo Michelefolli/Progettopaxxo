@@ -16,7 +16,7 @@ struct Stats {
 };  // struttura delle statistiche
 
 double norm_v(Boid const& B);  // modulo della velocità di un Boid
-//double abs_distance(Boid const& A, Boid const& B);  // distanza tra due boids
+double abs_distance(Boid const& A, Boid const& B);  // distanza tra due boids
 
 class Sim {
  private:
