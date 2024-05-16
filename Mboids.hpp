@@ -9,13 +9,14 @@ struct Boid {
 };  // struttura del singolo boid
 
 struct Stats {
-  double v_med{};    // velocità media
-  double d_med{};    // distanza media
+  double v_media{};  // velocità media
+  double d_media{};  // distanza media
   double sigma_v{};  // deviazione stardard velocità
   double sigma_d{};  // deviazione standard distanza
-};                   // struttura delle statistiche
+};  // struttura delle statistiche
 
 double norm_v(Boid const& B);  // modulo della velocità di un Boid
+//double abs_distance(Boid const& A, Boid const& B);  // distanza tra due boids
 
 class Sim {
  private:
@@ -31,7 +32,7 @@ class Sim {
  public:
   void add(Boid B);  // per aggiungere un boid al vettore. Non c'è dentro
                      // generazione casuale
-  
-  Stats statistics();              // dichiarazione della funzione statistics
+
+  Stats statistics();  // dichiarazione della funzione statistics
 };
 #endif
