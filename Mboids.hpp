@@ -34,5 +34,6 @@ class Sim {
                      // generazione casuale
 
   Stats statistics();  // dichiarazione della funzione statistics
+  void GetParams(double s1, double a1, double c1, double d1 , double ds1); //DIchiarazione funzione che gestisce i parametri
 };
 #endif

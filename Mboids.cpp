@@ -28,10 +28,32 @@ cout tutto
 */
 
 #include "Mboids.hpp"  //header file
-
+#include <iostream>
 #include <cmath>
 #include <numeric>  //per std::accumulate
 #include <vector>
+
+void InParams () {
+
+    Sim sim{};
+    double s1{};
+    double a1{};
+    double c1{};
+    double d1{};
+    double ds1{};
+
+    std::cin >> s1 >> a1 >> c1 >> d1 >> ds1;
+    sim.GetParams (s1, a1, c1, d1, ds1 ) ;
+}
+
+void Sim::GetParams(double s, double a, double c, double d , double ds) {
+
+s_ = s ;
+a_ = a ;
+c_ = c ;
+d_ = d ;
+d_s_ = ds ;
+}
 
 // funzione per aggiungere boid, utile per test:
 void Sim::add(Boid B) { stormo_.push_back(B); }  // as easy as that
@@ -90,4 +112,5 @@ Stats Sim::statistics() {
 
   return {v_media, d_media, sigma_v,
           sigma_d};  // importantissimo l'ordine, sennò la struct va a fanculo
-}
+} 
+int main(){}
