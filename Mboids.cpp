@@ -35,39 +35,75 @@ cout tutto
 #include <vector>
 
 // funzione per aggiungere boid, utile per test:
-void Sim::add(Boid B) { stormo_.push_back(B); }  // as easy as that
+void Sim::add(Boid boid) { stormo_.push_back(boid); }  // as easy as that
 
 // norma di una velocità di un boid mi torna utile per le formule:
-double norm_v(Boid const& B) {
-  return std::sqrt(std::pow(B.v_x, 2) + std::pow(B.v_y, 2));
+double norm_v(Boid const& boid_i) {
+  return std::sqrt(std::pow(boid_i.v_x, 2) + std::pow(boid_i.v_y, 2));
 }
 
 // distanza tra due boid, utilità da definire :
-double abs_distance(Boid const& A, Boid const& B) {
-  return std::sqrt(std::pow((A.x - B.x), 2) + std::pow((A.y - B.y), 2));
+double abs_distance(Boid const& boid_j, Boid const& boid_i) {
+  return std::sqrt(std::pow((boid_j.x - boid_i.x), 2) + std::pow((boid_j.y - boid_i.y), 2));
 }
 
 void Sim::separation()  // DA TESTARE
 {
-  for (Boid B : stormo_) {
+  for (Boid& boid_i : stormo_) {
     std::vector<Boid> subvector;
     std::copy_if(stormo_.begin(), stormo_.end(), std::back_inserter(subvector),
-                 [&B, this](Boid& A) {
-                   return abs_distance(A, B) < d_;
+                 [&boid_i, this](Boid& boid_j) {
+                   return abs_distance(boid_j, boid_i) < d_s_;
                  });  // distanza minore di d_ . "this" è per accedere alle
                       // variabili private.
     double v_sep_x = -s_ * std::accumulate(subvector.begin(), subvector.end(),
-                                           0., [&B](double sum, Boid A) {
-                                             return sum += A.x - B.x;
+                                           0., [&boid_i](double sum, Boid boid_j) {
+                                             return sum += boid_j.x - boid_i.x;
                                            });
     double v_sep_y = -s_ * std::accumulate(subvector.begin(), subvector.end(),
-                                           0., [&B](double sum, Boid A) {
-                                             return sum += A.y - B.y;
+                                           0., [&boid_i](double sum, Boid boid_j) {
+                                             return sum += boid_j.y - boid_i.y;
                                            });
-    B.v_x += v_sep_x;
-    B.v_y += v_sep_y;
+    boid_i.v_x += v_sep_x;
+    boid_i.v_y += v_sep_y;
   }
 };  // calcola e aggiorna le velocità di separazione
+
+void Sim::alignment_and_cohesion() {
+  double N = stormo_.size();
+  for (Boid boid_i : stormo_) {
+    std::vector<Boid> subvector;
+    std::copy_if(stormo_.begin(), stormo_.end(), std::back_inserter(subvector),
+                 [&boid_i, this](Boid& boid_j) {
+                   return abs_distance(boid_j, boid_i) < d_;
+                 });
+    
+    double v_alig_x = a_ * (1 / (stormo_.size() - 1)) *
+                      std::accumulate(subvector.begin(), subvector.end(), 0.,
+                                      [&boid_i](Boid boid_j, double sum) {
+                                        return sum += boid_j.v_x - boid_i.v_x;
+                                      });
+    double v_alig_y = a_ * (1 / (stormo_.size() - 1)) *
+                      std::accumulate(subvector.begin(), subvector.end(), 0.,
+                                      [&boid_i](Boid boid_j, double sum) {
+                                        return sum += boid_j.v_y - boid_i.v_y;
+                                      });
+
+    double x_c = 1 / (N - 1) *
+                 std::accumulate(
+                     subvector.begin(), subvector.end(), 0.,
+                     [](double sum, Boid boid_j) { return sum += boid_j.x; });
+    double y_c = 1 / (N - 1) *
+                 std::accumulate(
+                     subvector.begin(), subvector.end(), 0.,
+                     [](Boid boid_j, double sum) { return sum += boid_j.y; });
+    double v_coh_x = c_ * (x_c - boid_i.x);
+    double v_coh_y = c_ * (y_c - boid_i.y);
+    boid_i.v_x += v_alig_x + v_coh_x;
+    boid_i.v_y += v_alig_y + v_coh_y;
+  }
+};
+
 
 // funzione statistica:
 Stats Sim::statistics() {
@@ -75,17 +111,17 @@ Stats Sim::statistics() {
 
   double sum_v_x{};
   double sum_v_y{};
-  for (Boid B : stormo_) {
-    sum_v_x += B.v_x;
-    sum_v_y += B.v_y;
+  for (Boid boid_i : stormo_) {
+    sum_v_x += boid_i.v_x;
+    sum_v_y += boid_i.v_y;
   }  // somme delle velocità coordinata per coordinata
   double v_media = std::sqrt(pow(sum_v_x, 2) + std::pow(sum_v_y, 2)) /
                    N;  // velocità media in modulo
   double sigma_v =
       std::sqrt(std::accumulate(stormo_.begin(), stormo_.end(), 0.,
-                                [&v_media](double sum, Boid const& B) {
+                                [&v_media](double sum, Boid const& boid_i) {
                                   return sum +=
-                                         std::pow((norm_v(B) - v_media), 2);
+                                         std::pow((norm_v(boid_i) - v_media), 2);
                                 })) /
       std::sqrt(N);  // deviazione standard della velocità, DA TESTARE
 
