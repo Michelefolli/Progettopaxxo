@@ -11,7 +11,7 @@ ciclo per ogni elemento del vettore Stormo
     funzioni correzione velocità
         aggiornamento
 
-funzione statistiche
+xXfunzione statisticheXx
 }
 
 #main
@@ -29,6 +29,7 @@ cout tutto
 
 #include "Mboids.hpp"  //header file
 
+#include <algorithm>
 #include <cmath>
 #include <numeric>  //per std::accumulate
 #include <vector>
@@ -45,6 +46,28 @@ double norm_v(Boid const& B) {
 double abs_distance(Boid const& A, Boid const& B) {
   return std::sqrt(std::pow((A.x - B.x), 2) + std::pow((A.y - B.y), 2));
 }
+
+void Sim::separation()  // DA TESTARE
+{
+  for (Boid B : stormo_) {
+    std::vector<Boid> subvector;
+    std::copy_if(stormo_.begin(), stormo_.end(), std::back_inserter(subvector),
+                 [&B, this](Boid& A) {
+                   return abs_distance(A, B) < d_;
+                 });  // distanza minore di d_ . "this" è per accedere alle
+                      // variabili private.
+    double v_sep_x = -s_ * std::accumulate(subvector.begin(), subvector.end(),
+                                           0., [&B](double sum, Boid A) {
+                                             return sum += A.x - B.x;
+                                           });
+    double v_sep_y = -s_ * std::accumulate(subvector.begin(), subvector.end(),
+                                           0., [&B](double sum, Boid A) {
+                                             return sum += A.y - B.y;
+                                           });
+    B.v_x += v_sep_x;
+    B.v_y += v_sep_y;
+  }
+};  // calcola e aggiorna le velocità di separazione
 
 // funzione statistica:
 Stats Sim::statistics() {

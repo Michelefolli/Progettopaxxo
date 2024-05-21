@@ -32,7 +32,9 @@ class Sim {
  public:
   void add(Boid B);  // per aggiungere un boid al vettore. Non c'è dentro
                      // generazione casuale
-
+  void separation();
+  void alignment();
+  void cohesion();
   Stats statistics();  // dichiarazione della funzione statistics
 };
 #endif
