@@ -28,11 +28,13 @@ cout tutto
 */
 
 #include "Mboids.hpp"  //header file
-
+#include <iostream>
 #include <algorithm>
 #include <cmath>
 #include <numeric>  //per std::accumulate
 #include <vector>
+
+
 
 // funzione per aggiungere boid, utile per test:
 void Sim::add(Boid boid) { stormo_.push_back(boid); }  // as easy as that
@@ -149,4 +151,4 @@ Stats Sim::statistics() {
 
   return {v_media, d_media, sigma_v,
           sigma_d};  // importantissimo l'ordine, sennò la struct va a fanculo
-}
+} 
