@@ -1,3 +1,7 @@
 relazione/
 !relazione.tex
 !relazione.pdf
+
+Mboids.cpp
+Mboids.hpp
+
