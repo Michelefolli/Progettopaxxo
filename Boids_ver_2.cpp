@@ -9,7 +9,16 @@ void Sim::add(const Boid& boid) {
   stormo_.push_back(boid);
 }  // per aggiungere boid allo stormo
 
-double abs_distance(const Boid& boid_i, const Boid& boid_j) {
+void Sim::GetParams(double s, double a, double c, double d , double ds) {
+
+s_ = s ;
+a_ = a ;
+c_ = c ;
+d_ = d ;
+d_s_ = ds ;
+}
+
+double Sim::abs_distance(const Boid& boid_i, const Boid& boid_j) {
   return (boid_i.position + boid_j.position).norm();
 };  // modulo della distanza tra due boid
 
