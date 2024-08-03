@@ -1,18 +1,16 @@
-#ifndef MBOIDS_HPP
-#define MBOIDS_HPP
+#ifndef BOIDS_VER_2_HPP
+#define BOIDS_VER_2_HPP
 #include <cmath>
 #include <vector>
 struct Vec_2d {
-  Vec_2d(double x, double y)
-      : x(x), y(y){}  // non so come funziona il costruttore, ho copiato da
-                       // chat gpt.
+  Vec_2d(double x_val, double y_val)
+      : x(x_val),
+        y(y_val) {}
   double x;
   double y;
   Vec_2d operator+(const Vec_2d& v) const { return Vec_2d(x + v.x, y + v.y); }
   Vec_2d operator-(const Vec_2d& v) const { return Vec_2d(x - v.x, y - v.y); }
-  Vec_2d operator*(const double value) const {
-    return Vec_2d(x * value, y * value);
-  }
+  Vec_2d operator*(const double c) const { return Vec_2d(x * c, y * c); }
   Vec_2d operator+=(const Vec_2d& v) {
     x += v.x;
     y += v.y;
@@ -22,11 +20,12 @@ struct Vec_2d {
 };  // vettore a due dimensioni, utilissimo
 
 struct Boid {
-  Boid(Vec_2d position, Vec_2d velocity)
-      : position(position), velocity(velocity){}
+  Boid(Vec_2d position_val, Vec_2d velocity_val)
+      : position(position_val), velocity(velocity_val) {}
   Vec_2d position;
   Vec_2d velocity;
 };
+
 struct Stats {
   Vec_2d v_media{0., 0.};  // velocità media
   Vec_2d d_media{0., 0.};  // distanza media
@@ -42,8 +41,6 @@ struct Stats {
   }
 };  // struttura delle statistiche
 
-
-
 class Sim {
  private:
   //"_" alla fine è perché il giacomins vuole
@@ -55,13 +52,13 @@ class Sim {
   double d_s_{};  // distanza minima
                   // i parametri n e T vanno poi nel main
  public:
-  std::vector<Boid> stormo_{}; // insieme dei boid;
-  void add(const Boid& boid);  // per aggiungere un boid al vettore. Non c'è
-                               // dentro generazione casuale
-  double abs_distance(const Boid& boid_i, const Boid& boid_j); //distanza tra boids
+  std::vector<Boid> stormo_;   // insieme dei boid;
+  void add(const Boid& boid);  // per aggiungere un boid al vettore stormo_.
+  double abs_distance(const Boid& boid_i,
+                      const Boid& boid_j);  // distanza tra boids
   void separation();
   void alignment_and_cohesion();
-  void cohesion();
+  void travel();       // aggiornamento delle posizioni dei boid
   Stats statistics();  // dichiarazione della funzione statistics
   void GetParams(
       double s1, double a1, double c1, double d1,
