@@ -48,26 +48,29 @@ void Sim::alignment_and_cohesion() {
           return abs_distance(boid, other_boid) < d_;
         });  // ora il vettore subvector contiene tutti i boid a distanza d_s_
     double n = static_cast<double>(subvector.size());
-    Vec_2d subboids_velocity_sum =
-        (std::accumulate(subvector.begin(), subvector.end(), Vec_2d(0., 0.),
-                         [](Vec_2d sum, const Boid& other_boid) {
-                           return sum += other_boid.velocity;
-                         }) -
-         boid.velocity);
-    Vec_2d v_alignment =
-        (subboids_velocity_sum * (1 / (n - 1)) - boid.velocity) * a_;
-    // calcolo della velocità di allineamento
-    Vec_2d center_of_mass =
-        std::accumulate(subvector.begin(), subvector.end(), Vec_2d(0., 0.),
-                        [&n](Vec_2d sum, const Boid& boid_j) {
-                          return sum += (boid_j.position * (1 / (n - 1)));
-                        }) -
-        boid.position *
-            (1 / (n - 1));  // calcolo del centro di massa del subvector. Il
-                            // subvector contiene anche il boid di riferimento,
-                            // quindi dopo la sommatoria glielo togliamo
-    Vec_2d v_cohesion = (center_of_mass - boid.position) * c_;
-    boid.velocity += (v_alignment + v_cohesion);
+    if (n > 1) {  // evita la divisione per 0
+      Vec_2d subboids_velocity_sum =
+          std::accumulate(subvector.begin(), subvector.end(), Vec_2d(0., 0.),
+                          [](Vec_2d sum, const Boid& other_boid) {
+                            return sum += other_boid.velocity;
+                          }) -
+          boid.velocity;
+      Vec_2d v_alignment =
+          (subboids_velocity_sum * (1 / (n - 1)) - boid.velocity) * a_;
+      // calcolo della velocità di allineamento
+      Vec_2d center_of_mass =
+          std::accumulate(subvector.begin(), subvector.end(), Vec_2d(0., 0.),
+                          [&n](Vec_2d sum, const Boid& boid_j) {
+                            return sum += (boid_j.position * (1 / (n - 1)));
+                          }) -
+          boid.position *
+              (1 /
+               (n - 1));  // calcolo del centro di massa del subvector. Il
+                          // subvector contiene anche il boid di riferimento,
+                          // quindi dopo la sommatoria glielo togliamo
+      Vec_2d v_cohesion = (center_of_mass - boid.position) * c_;
+      boid.velocity += (v_alignment + v_cohesion);
+    }
   }
 }
 

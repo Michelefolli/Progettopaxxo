@@ -21,20 +21,20 @@ void draw(sf::RenderWindow& window, const Boid& boid) {
 
 void out_of_border(Boid& boid) {
   if (boid.position.x < 0) {
-    boid.position.x = 10;
-    boid.velocity.x = boid.velocity.x *-1;
+    boid.position.x = 0;
+    boid.velocity.x = boid.velocity.x *-2;
   }
   if (boid.position.y < 0) {
-    boid.position.y = 10;
-    boid.velocity.y = boid.velocity.y *-1;
+    boid.position.y = 0;
+    boid.velocity.y = boid.velocity.y *-2;
   }
   if (boid.position.x > width) {
-    boid.position.x = width-10;
-    boid.velocity.x = boid.velocity.x *-1;
+    boid.position.x = width;
+    boid.velocity.x = boid.velocity.x *-2;
   }
   if (boid.position.y > height) {
-    boid.position.y = height-10;
-    boid.velocity.y = boid.velocity.y *-1;
+    boid.position.y = height;
+    boid.velocity.y = boid.velocity.y *-2;
   }
 }  // questa funzione dovrebbe in teoria essere responsabile dell'effetto
    // pacman. Vedendo i risultati questa scelta non so se è delle migliori
@@ -43,18 +43,18 @@ void out_of_border(Boid& boid) {
 int main() {
   sf::RenderWindow window(sf::VideoMode(width, height),
                           "Boids Simulation");  // crea la finestra
-  window.setFramerateLimit(1);                  // numero di fps
+  window.setFramerateLimit(200);                  // numero di fps
   std::srand(std::time(
       nullptr));  // setta il seed della generazione casuale attraverso il tempo
   Sim sim;        // inizializzo la simulazione
-  sim.GetParams(10, 0.3, 0.2, 20,
-                12);  // parametri totalmente a caso, sono quasi sicuramente
+  sim.GetParams(0.5, 0.3, 0.2, 20,
+                8);  // parametri totalmente a caso, sono quasi sicuramente
                       // responsabili dello strano comportamento
-  for (int i = 0; i < 200; ++i) {
+  for (int i = 0; i < 1000; ++i) {
     Boid boid({static_cast<double>(std::rand() % width),
                static_cast<double>(std::rand() % height)},
-              {static_cast<double>(((std::rand() % 4) - 2) * (0.0000000005)),
-               static_cast<double>(((std::rand() % 4) - 2) * (0.0000000005))});
+              {static_cast<double>((std::rand() % 4) - 2),
+               static_cast<double>((std::rand() % 4) - 2)});
 
     sim.add(boid);
   }  // genera i boid casualmente e li aggiunge allo stormo
@@ -68,7 +68,7 @@ int main() {
       }
     }  // permette di chiudere la finestra cliccado sulla x
     window.clear();  // pulisce la finestra ogni frame
-    for (auto boid : sim.stormo_) {
+    for (auto& boid : sim.stormo_) {
       out_of_border(boid);
       draw(window, boid);
     }  // disegna tutti i boid, ma non li fa vedere ancora, quello è display
