@@ -18,7 +18,7 @@ void Sim::GetParams(double s, double a, double c, double d, double ds) {
 }
 
 double Sim::abs_distance(const Boid& boid_i, const Boid& boid_j) {
-  return (boid_i.position + boid_j.position).norm();
+  return (boid_i.position - boid_j.position).norm();
 };  // modulo della distanza tra due boid
 
 void Sim::separation() {
@@ -32,41 +32,42 @@ void Sim::separation() {
     Vec_2d v_sep =
         std::accumulate(subvector.begin(), subvector.end(), Vec_2d(0., 0.),
                         [&boid](Vec_2d sum, const Boid& other_boid) {
-                          return sum += boid.position - other_boid.position;
+                          return sum += (other_boid.position - boid.position);
                         }) *
         (-s_);
     boid.velocity += v_sep;
   };
-}  // calcolo della velocità di separazione
+}  // calcolo della velocità di separazione. Questa è testata e funziona
 
 void Sim::alignment_and_cohesion() {
-  double N = stormo_.size();  // forse da cambiare, perché sono due tipi diversi
-
   for (Boid& boid : stormo_) {
     std::vector<Boid> subvector;
     std::copy_if(
         stormo_.begin(), stormo_.end(), std::back_inserter(subvector),
         [&boid, this](const Boid& other_boid) {
-          return abs_distance(boid, other_boid) < d_ &&
-                 abs_distance(boid, other_boid) !=
-                     0;  // non è corretto formalmente ma dovrebbe funzionare.
-                         // Sarebbe per scartare il boid che è preso in
-                         // considerazione nel ciclo for, ma potrebbe scartare
-                         // dei boid che occupano la stessa posizione, anche se
-                         // questo non dovrebbe succedere.
+          return abs_distance(boid, other_boid) < d_;
         });  // ora il vettore subvector contiene tutti i boid a distanza d_s_
-    Vec_2d v_alignment = std::accumulate(
-        subvector.begin(), subvector.end(), Vec_2d(0., 0.),
-        [&boid, this, &N](Vec_2d sum, const Boid& other_boid) {
-          return sum += (boid.velocity - other_boid.velocity) * (a_ / (N - 1));
-        });  // calcolo della velocità di allineamento
+    double n = static_cast<double>(subvector.size());
+    Vec_2d subboids_velocity_sum =
+        (std::accumulate(subvector.begin(), subvector.end(), Vec_2d(0., 0.),
+                         [](Vec_2d sum, const Boid& other_boid) {
+                           return sum += other_boid.velocity;
+                         }) -
+         boid.velocity);
+    Vec_2d v_alignment =
+        (subboids_velocity_sum * (1 / (n - 1)) - boid.velocity) * a_;
+    // calcolo della velocità di allineamento
     Vec_2d center_of_mass =
         std::accumulate(subvector.begin(), subvector.end(), Vec_2d(0., 0.),
-                        [&N](Vec_2d sum, const Boid& boid_j) {
-                          return sum += boid_j.position * (1 / (N - 1));
-                        });  // calcolo del centro di massa del subvector
+                        [&n](Vec_2d sum, const Boid& boid_j) {
+                          return sum += (boid_j.position * (1 / (n - 1)));
+                        }) -
+        boid.position *
+            (1 / (n - 1));  // calcolo del centro di massa del subvector. Il
+                            // subvector contiene anche il boid di riferimento,
+                            // quindi dopo la sommatoria glielo togliamo
     Vec_2d v_cohesion = (center_of_mass - boid.position) * c_;
-    boid.velocity += v_alignment + v_cohesion;
+    boid.velocity += (v_alignment + v_cohesion);
   }
 }
 

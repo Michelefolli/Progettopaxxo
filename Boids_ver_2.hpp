@@ -54,14 +54,16 @@ class Sim {
  public:
   std::vector<Boid> stormo_;   // insieme dei boid;
   void add(const Boid& boid);  // per aggiungere un boid al vettore stormo_.
-  double abs_distance(const Boid& boid_i,
-                      const Boid& boid_j);  // distanza tra boids
+  // distanza tra boids
   void separation();
   void alignment_and_cohesion();
   void travel();       // aggiornamento delle posizioni dei boid
   Stats statistics();  // dichiarazione della funzione statistics
+  double abs_distance(const Boid& boid_i,
+                      const Boid& boid_j);
   void GetParams(
       double s1, double a1, double c1, double d1,
       double ds1);  // DIchiarazione funzione che gestisce i parametri
 };
+  
 #endif
