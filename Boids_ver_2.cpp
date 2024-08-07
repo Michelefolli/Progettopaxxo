@@ -83,7 +83,7 @@ void Sim::travel() {
 Stats Sim::statistics() {
   double N = stormo_.size();  // poi sarà il parametro N
 
-  Vec_2d v_media = std::accumulate(
+  /* Vec_2d v_media = std::accumulate(
       stormo_.begin(), stormo_.end(), Vec_2d(0., 0.),
       [&N](Vec_2d res, const Boid& boid) {
         return res += boid.velocity * (1 / N);
@@ -93,8 +93,7 @@ Stats Sim::statistics() {
       [&N](Vec_2d res, const Boid& boid) {
         return res += boid.position * (1 / N);
       });  // calcolo della distanza media a parte perché serve come valore
-
-  Stats stats = std::accumulate(
+Stats stats = std::accumulate(
       stormo_.begin(), stormo_.end(), Stats(),
       [&N, &v_media, &d_media](Stats res, const Boid& boid) {
         return res +=
@@ -107,5 +106,32 @@ Stats Sim::statistics() {
   stats.sigma_d = std::sqrt(stats.sigma_d);
   stats.v_media = v_media;
   stats.d_media = d_media;
+  return stats;
+
+*/
+
+  Boid med_vals =
+      std::accumulate(stormo_.begin(), stormo_.end(), Boid({0., 0.}, {0., 0.}),
+                      [&N](Boid res, const Boid& boid) {
+                        res.position += boid.position * (1 / N);
+                        res.velocity += boid.velocity * (1 / N);
+                        return res;
+                      });
+
+  Stats stats = std::accumulate(
+      stormo_.begin(), stormo_.end(), Stats(),
+      [&N, &med_vals](Stats res, const Boid& boid) {
+        return res +=
+               {{0., 0.},
+                {0., 0.},
+                std::pow((boid.velocity.norm() - med_vals.velocity.norm()), 2) /
+                    N,
+                std::pow((boid.position.norm() - med_vals.position.norm()), 2) /
+                    N};
+      });  // forse si può fare tutto in un unico accumulate ma non so fares
+  stats.sigma_v = std::sqrt(stats.sigma_v);
+  stats.sigma_d = std::sqrt(stats.sigma_d);
+  stats.v_media = med_vals.velocity;
+  stats.d_media = med_vals.position;
   return stats;
 }
