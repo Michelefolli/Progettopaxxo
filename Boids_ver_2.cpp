@@ -5,6 +5,17 @@
 #include <numeric>
 #include <vector>
 
+void Boid::limit() {
+  if (this->velocity.norm() > max_speed) {
+    double norm = this->velocity.norm();
+
+    this->velocity = {this->velocity.x * max_speed * (1 / norm),
+                      this->velocity.y * max_speed * (1 / norm)};
+  }
+}  // questo limita la velocità, il trucchetto algebrico per mantenere la
+   // direzione è dividere per la norma del vettore e poi moltiplicarlo per la
+   // velocità massima
+
 void Sim::add(const Boid& boid) {
   stormo_.push_back(boid);
 }  // per aggiungere boid allo stormo

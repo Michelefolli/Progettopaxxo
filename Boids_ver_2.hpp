@@ -3,9 +3,7 @@
 #include <cmath>
 #include <vector>
 struct Vec_2d {
-  Vec_2d(double x_val, double y_val)
-      : x(x_val),
-        y(y_val) {}
+  Vec_2d(double x_val, double y_val) : x(x_val), y(y_val) {}
   double x;
   double y;
   Vec_2d operator+(const Vec_2d& v) const { return Vec_2d(x + v.x, y + v.y); }
@@ -24,6 +22,8 @@ struct Boid {
       : position(position_val), velocity(velocity_val) {}
   Vec_2d position;
   Vec_2d velocity;
+  const double max_speed = 20;
+  void limit();  // limite di velocità
 };
 
 struct Stats {
@@ -59,11 +59,10 @@ class Sim {
   void alignment_and_cohesion();
   void travel();       // aggiornamento delle posizioni dei boid
   Stats statistics();  // dichiarazione della funzione statistics
-  double abs_distance(const Boid& boid_i,
-                      const Boid& boid_j);
+  double abs_distance(const Boid& boid_i, const Boid& boid_j);
   void GetParams(
       double s1, double a1, double c1, double d1,
       double ds1);  // DIchiarazione funzione che gestisce i parametri
 };
-  
+
 #endif
