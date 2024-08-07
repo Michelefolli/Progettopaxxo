@@ -98,10 +98,14 @@ Stats Sim::statistics() {
       stormo_.begin(), stormo_.end(), Stats(),
       [&N, &v_media, &d_media](Stats res, const Boid& boid) {
         return res +=
-               {v_media, d_media, (boid.velocity.norm() - v_media.norm()) / N,
-                (boid.position.norm() - d_media.norm()) / N};
+               {{0., 0.},
+                {0., 0.},
+                std::pow((boid.velocity.norm() - v_media.norm()), 2) / N,
+                std::pow((boid.position.norm() - d_media.norm()), 2) / N};
       });  // forse si può fare tutto in un unico accumulate ma non so fares
-  stats.sigma_d = std::sqrt(stats.sigma_d);
   stats.sigma_v = std::sqrt(stats.sigma_v);
+  stats.sigma_d = std::sqrt(stats.sigma_d);
+  stats.v_media = v_media;
+  stats.d_media = d_media;
   return stats;
 }

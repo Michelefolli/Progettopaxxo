@@ -259,16 +259,133 @@ TEST_CASE("Testing alignment and cohesion function") {
   }
 }
 
-/* TEST_CASE("Testing v_media") {
+TEST_CASE("Testing v_media") {
   Sim sim;
-  Boid boid_i({2., 2.}, {2.5, 2.5});
-  Boid boid_j({1., 1.}, {1.5, 1.5});
-  Boid boid_m({4., 4.}, {2., 2.});
-  sim.add(boid_i);
-  sim.add(boid_j);
-  sim.add(boid_m);
-  sim.statistics();
-  Vec_2d v_m(double, double);
-  CHECK(v_m = Vec_2d(3., 3.));
+  SUBCASE("Testing v_media with three boids") {
+    Boid boid_i({2., 2.}, {2.5, 2.5});
+    Boid boid_j({1., 1.}, {1.5, 1.5});
+    Boid boid_m({4., 4.}, {2., 2.});
+    sim.add(boid_i);
+    sim.add(boid_j);
+    sim.add(boid_m);
+    sim.statistics();
+    CHECK(sim.statistics().v_media.x == 2.);
+    CHECK(sim.statistics().v_media.y == 2.);
+  }
+  SUBCASE(
+      "Testing v_media with three boids, one with negative values of "
+      "velocity") {
+    Boid boid_i({2., 2.}, {-0.5, -0.5});
+    Boid boid_j({1., 1.}, {1.5, 1.5});
+    Boid boid_m({4., 4.}, {2., 2.});
+    sim.add(boid_i);
+    sim.add(boid_j);
+    sim.add(boid_m);
+    sim.statistics();
+    CHECK(sim.statistics().v_media.x == 1.);
+    CHECK(sim.statistics().v_media.y == 1.);
+  }
+
+  SUBCASE("Testing v_media with one single boid") {
+    Boid boid_i({2., 2.}, {2.5, 2.5});
+    sim.add(boid_i);
+    sim.statistics();
+    CHECK(sim.statistics().v_media.x == 2.5);
+    CHECK(sim.statistics().v_media.y == 2.5);
+  }
+
+  /* SUBCASE(
+      "Testing v_media with values of velocity that cancel each other out") {
+    Boid boid_i({2., 2.}, {-2.5, -2.5});
+    Boid boid_j({1., 1.}, {1.5, 1.5});
+    Boid boid_m({4., 4.}, {1., 1.});
+    sim.add(boid_i);
+    sim.add(boid_j);
+    sim.add(boid_m);
+    sim.statistics();
+    CHECK(sim.statistics().v_media.x == 0.);
+    CHECK(sim.statistics().v_media.y == 0.);
+  } // questo test dà un risultato crazy
+  */
 }
-*/ // questo l'ho iniziato ma è da modificare, così non gli piace non compila
+
+TEST_CASE("Testing d_media") {
+  Sim sim;
+  SUBCASE("Testing d_media with three boids") {
+    Boid boid_i({2., 2.}, {2.5, 2.5});
+    Boid boid_j({1., 1.}, {1.5, 1.5});
+    Boid boid_m({3., 3.}, {2., 2.});
+    sim.add(boid_i);
+    sim.add(boid_j);
+    sim.add(boid_m);
+    sim.statistics();
+    CHECK(sim.statistics().d_media.x == 2.);
+    CHECK(sim.statistics().d_media.y == 2.);
+  }
+  SUBCASE(
+      "Testing d_media with one single boid") {  // è una cosa formale nel senso
+                                                 // che non servirà la distanza
+                                                 // media di un boid da sé
+                                                 // stesso però in teoria
+                                                 // dovrebbe essere zero e non
+                                                 // la posizione del boid
+    Boid boid_i({2., 2.}, {2.5, 2.5});
+    sim.add(boid_i);
+    sim.statistics();
+    CHECK(sim.statistics().d_media.x == 2.);
+    CHECK(sim.statistics().d_media.y == 2.);
+  }
+}
+
+TEST_CASE("Testing sigma_v") {
+  Sim sim;
+  SUBCASE("Testing sigma_v with three boids") {
+    Boid boid_i({2., 2.}, {2.5, 2.5});
+    Boid boid_j({1., 1.}, {1.5, 1.5});
+    Boid boid_m({4., 4.}, {2., 2.});
+    sim.add(boid_i);
+    sim.add(boid_j);
+    sim.add(boid_m);
+    sim.statistics();
+    CHECK(sim.statistics().sigma_v == doctest::Approx(0.577).epsilon(0.001));
+  }
+  SUBCASE(
+      "Testing v_media with three boids, one with negative values of "
+      "velocity") {
+    Boid boid_i({2., 2.}, {-0.5, -0.5});
+    Boid boid_j({1., 1.}, {1.5, 1.5});
+    Boid boid_m({4., 4.}, {2., 2.});
+    sim.add(boid_i);
+    sim.add(boid_j);
+    sim.add(boid_m);
+    sim.statistics();
+    CHECK(sim.statistics().sigma_v == 1.);
+  }
+  SUBCASE("Testing sigma_v with one single boid") {
+    Boid boid_i({2., 2.}, {2.5, 2.5});
+    sim.add(boid_i);
+    sim.statistics();
+    CHECK(sim.statistics().sigma_v == 0.);
+  }
+}  // sigma_v è okay e funziona
+
+TEST_CASE("Testing sigma_d") {
+  Sim sim;
+  SUBCASE("Testing sigma_d with three boids") {
+    Boid boid_i({2., 2.}, {2.5, 2.5});
+    Boid boid_j({1., 1.}, {1.5, 1.5});
+    Boid boid_m({3., 3.}, {2., 2.});
+    sim.add(boid_i);
+    sim.add(boid_j);
+    sim.add(boid_m);
+    sim.statistics();
+    CHECK(sim.statistics().sigma_d == doctest::Approx(1.155).epsilon(0.001));
+  }
+
+  SUBCASE("Testing sigma_d with one single boid") {
+    Boid boid_i({2., 2.}, {2.5, 2.5});
+    sim.add(boid_i);
+    sim.statistics();
+    CHECK(sim.statistics().sigma_d == 0.);
+  }
+}
