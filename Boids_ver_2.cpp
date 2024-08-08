@@ -5,27 +5,25 @@
 #include <numeric>
 #include <vector>
 
-const int width =1920;
+const int width = 1920;
 const int height = 1080;
 void repulsive_border(Boid& boid) {
-  if (boid.position.x < 80) {  // && boid.velocity.x <= 0) {
-    boid.velocity.x +=
-        (boid.velocity.norm()) * (1) *
-        (1 / std::pow(boid.position.x,
-                      0.3));  // il fattore additivo è per evitare
-                              // che i boid si fermino in teoria
+  auto position = boid.getPosition();
+  auto velocity = boid.getVelocity();
+
+  if (position.x < 80) {
+    velocity.x += (velocity.norm()) * (1) * (1 / std::pow(position.x, 0.3));
   }
-  if (boid.position.y < 80) {  //&& boid.velocity.y <= 0) {
-    boid.velocity.y +=
-        (boid.velocity.norm()) * (1) * (1 / std::pow(boid.position.y, 0.3));
+  if (position.y < 80) {
+    velocity.y += (velocity.norm()) * (1) * (1 / std::pow(position.y, 0.3));
   }
-  if (boid.position.x > (width - 80)) {  //&& boid.velocity.x >= 0) {
-    boid.velocity.x += (boid.velocity.norm()) * (-1) *
-                       (1 / std::pow((width - boid.position.x), 0.3));
+  if (position.x > (width - 80)) {
+    velocity.x +=
+        (velocity.norm()) * (-1) * (1 / std::pow((width - position.x), 0.3));
   }
-  if (boid.position.y > (height - 80)) {  //&& boid.velocity.y >= 0) {
-    boid.velocity.y += (boid.velocity.norm()) * (-1) *
-                       (1 / std::pow((height - boid.position.y), 0.3));
+  if (position.y > (height - 80)) {
+    velocity.y +=
+        (velocity.norm()) * (-1) * (1 / std::pow((height - position.y), 0.3));
   }
 }
 
@@ -39,18 +37,6 @@ void Boid::limit(float max_speed) {
 }  // questo limita la velocità, il trucchetto algebrico per mantenere la
    // direzione è dividere per la norma del vettore e poi moltiplicarlo per la
    // velocità massima
-
-/*void Sim::add(const Boid& boid) {
-  stormo_.push_back(boid);
-}  // per aggiungere boid allo stormo
-
-void Sim::GetParams(float s, float a, float c, float d, float ds) {
-  s_ = s;
-  a_ = a;
-  c_ = c;
-  d_ = d;
-  d_s_ = ds;
-}*/
 
 float Boid::abs_distance_from(const Boid& boid_j) {
   return (this->position - boid_j.position).norm();
@@ -108,6 +94,9 @@ Vec_2d Boid::alignment_and_cohesion(const std::vector<Boid>& stormo,
     return {0, 0};
 };
 
+Vec_2d Boid::getPosition() { return this->position; }
+Vec_2d Boid::getVelocity() { return this->velocity; }
+
 void Boid::update(Params params, const std::vector<Boid>& stormo,
                   const float& max_speed) {
   this->velocity +=
@@ -118,6 +107,14 @@ void Boid::update(Params params, const std::vector<Boid>& stormo,
   this->position += this->velocity;
 }
 
+void Boid::draw_on(sf::RenderWindow& window) {
+  sf::CircleShape shape(4, 3);  // definisce la forma da disegnare
+  shape.setPosition((this->position.x), (this->position.y));
+  shape.setFillColor(sf::Color::White);
+  float angle = (std::atan2(this->velocity.y, this->velocity.x) * 180 / (M_PI));
+  shape.setRotation(angle);
+  window.draw(shape);
+}  // disegna il boid come un triangolo
 
 /*void Sim::travel() {
   for (Boid& boid : stormo_) {

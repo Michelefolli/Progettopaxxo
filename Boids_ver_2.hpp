@@ -1,7 +1,9 @@
 #ifndef BOIDS_VER_2_HPP
 #define BOIDS_VER_2_HPP
+#include <SFML/Graphics.hpp>
 #include <cmath>
 #include <vector>
+
 struct Vec_2d {
   Vec_2d(float x_val, float y_val) : x(x_val), y(y_val) {}
   float x;
@@ -25,11 +27,8 @@ struct Params {
   float dist_sep{};  // distanza minima
 };
 
-
 class Boid {
- public:
-  Boid(Vec_2d position_val, Vec_2d velocity_val)
-      : position(position_val), velocity(velocity_val) {}
+ private:
   Vec_2d position;
   Vec_2d velocity;
   void limit(float max_speed);  // limite di velocità
@@ -39,16 +38,22 @@ class Boid {
   Vec_2d alignment_and_cohesion(const std::vector<Boid>& stormo,
                                 const float& alig, const float& cohes,
                                 const float& dist);
+
+ public:
+  Boid(Vec_2d position_val, Vec_2d velocity_val)
+      : position(position_val), velocity(velocity_val) {}
+  Vec_2d getPosition();
+  Vec_2d getVelocity();
   void update(Params params, const std::vector<Boid>& stormo,
               const float& max_speed);
-  // void travel();
+  void draw_on(sf::RenderWindow& window);
 };
 
 struct Stats {
   Vec_2d v_media{0., 0.};  // velocità media
   Vec_2d d_media{0., 0.};  // distanza media
-  float sigma_v{};        // deviazione stardard velocità
-  float sigma_d{};        // deviazione standard distanza
+  float sigma_v{};         // deviazione stardard velocità
+  float sigma_d{};         // deviazione standard distanza
 
   Stats operator+=(const Stats& s) {
     v_media += s.v_media;
@@ -58,7 +63,6 @@ struct Stats {
     return *this;
   }
 };  // struttura delle statistiche
-
 
 /*class Sim {
  private:
