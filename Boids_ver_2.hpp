@@ -42,8 +42,12 @@ class Boid {
  public:
   Boid(Vec_2d position_val, Vec_2d velocity_val)
       : position(position_val), velocity(velocity_val) {}
-  Vec_2d getPosition();
-  Vec_2d getVelocity();
+  const Vec_2d& getPosition() const;
+  const Vec_2d& getVelocity()const;
+  void setPosition(const Vec_2d& position_values);
+  void setVelocity(const Vec_2d& velocity_values);
+  Boid operator+=(const Boid& boid);
+
   void update(Params params, const std::vector<Boid>& stormo,
               const float& max_speed);
   void draw_on(sf::RenderWindow& window);
@@ -63,6 +67,8 @@ struct Stats {
     return *this;
   }
 };  // struttura delle statistiche
+
+Stats statistics(const std::vector<Boid>& stormo);
 
 /*class Sim {
  private:
