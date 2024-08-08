@@ -59,6 +59,7 @@ struct Stats {
   }
 };  // struttura delle statistiche
 
+Stats statistics(const std::vector<Boid>& stormo);
 
 /*class Sim {
  private:

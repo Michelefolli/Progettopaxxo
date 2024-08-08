@@ -5,7 +5,7 @@
 #include <numeric>
 #include <vector>
 
-const int width =1920;
+const int width = 1920;
 const int height = 1080;
 void repulsive_border(Boid& boid) {
   if (boid.position.x < 80) {  // && boid.velocity.x <= 0) {
@@ -118,7 +118,6 @@ void Boid::update(Params params, const std::vector<Boid>& stormo,
   this->position += this->velocity;
 }
 
-
 /*void Sim::travel() {
   for (Boid& boid : stormo_) {
     boid.position += boid.velocity;
@@ -152,9 +151,13 @@ Stats Sim::statistics() {
   stats.v_media = v_media;
   stats.d_media = d_media;
   return stats;
+*/
+
+Stats statistics(const std::vector<Boid>& stormo) {
+  float N = stormo.size();
 
   Boid med_vals =
-      std::accumulate(stormo_.begin(), stormo_.end(), Boid({0., 0.}, {0., 0.}),
+      std::accumulate(stormo.begin(), stormo.end(), Boid({0., 0.}, {0., 0.}),
                       [&N](Boid res, const Boid& boid) {
                         res.position += boid.position * (1 / N);
                         res.velocity += boid.velocity * (1 / N);
@@ -162,19 +165,21 @@ Stats Sim::statistics() {
                       });
 
   Stats stats = std::accumulate(
-      stormo_.begin(), stormo_.end(), Stats(),
+      stormo.begin(), stormo.end(), Stats(),
       [&N, &med_vals](Stats res, const Boid& boid) {
         return res +=
                {{0., 0.},
                 {0., 0.},
-                std::pow((boid.velocity.norm() - med_vals.velocity.norm()), 2) /
+                static_cast<float>(std::pow((boid.velocity.norm() - med_vals.velocity.norm()), 2)) /
                     N,
-                std::pow((boid.position.norm() - med_vals.position.norm()), 2) /
+                static_cast<float>(std::pow((boid.position.norm() - med_vals.position.norm()), 2)) /
                     N};
-      });  // forse si può fare tutto in un unico accumulate ma non so fares
+      });  // abbiamo dovuto convertire in float perché nella dichiarazione di Stats le sigma sono float
+      // forse si può fare tutto in un unico accumulate ma non so fares
+
   stats.sigma_v = std::sqrt(stats.sigma_v);
   stats.sigma_d = std::sqrt(stats.sigma_d);
   stats.v_media = med_vals.velocity;
   stats.d_media = med_vals.position;
   return stats;
-}*/
+}
