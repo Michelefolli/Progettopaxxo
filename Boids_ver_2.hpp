@@ -3,34 +3,52 @@
 #include <cmath>
 #include <vector>
 struct Vec_2d {
-  Vec_2d(double x_val, double y_val) : x(x_val), y(y_val) {}
-  double x;
-  double y;
+  Vec_2d(float x_val, float y_val) : x(x_val), y(y_val) {}
+  float x;
+  float y;
   Vec_2d operator+(const Vec_2d& v) const { return Vec_2d(x + v.x, y + v.y); }
   Vec_2d operator-(const Vec_2d& v) const { return Vec_2d(x - v.x, y - v.y); }
-  Vec_2d operator*(const double c) const { return Vec_2d(x * c, y * c); }
+  Vec_2d operator*(const float c) const { return Vec_2d(x * c, y * c); }
   Vec_2d operator+=(const Vec_2d& v) {
     x += v.x;
     y += v.y;
     return *this;
   }
-  double norm() const { return std::sqrt(x * x + y * y); }
+  float norm() const { return std::sqrt(x * x + y * y); }
 };  // vettore a due dimensioni, utilissimo
 
-struct Boid {
+struct Params {
+  float sep{};       // fattore di separazione
+  float alig{};      // fattore di allineamento
+  float cohes{};     // fattore di coesione
+  float dist{};      // raggio visivo dei boids
+  float dist_sep{};  // distanza minima
+};
+
+
+class Boid {
+ public:
   Boid(Vec_2d position_val, Vec_2d velocity_val)
       : position(position_val), velocity(velocity_val) {}
   Vec_2d position;
   Vec_2d velocity;
-  const double max_speed = 20;
-  void limit();  // limite di velocità
+  void limit(float max_speed);  // limite di velocità
+  float abs_distance_from(const Boid& boid_j);
+  Vec_2d separation(const std::vector<Boid>& stormo, const float& sep,
+                    const float& dist_sep);
+  Vec_2d alignment_and_cohesion(const std::vector<Boid>& stormo,
+                                const float& alig, const float& cohes,
+                                const float& dist);
+  void update(Params params, const std::vector<Boid>& stormo,
+              const float& max_speed);
+  // void travel();
 };
 
 struct Stats {
   Vec_2d v_media{0., 0.};  // velocità media
   Vec_2d d_media{0., 0.};  // distanza media
-  double sigma_v{};        // deviazione stardard velocità
-  double sigma_d{};        // deviazione standard distanza
+  float sigma_v{};        // deviazione stardard velocità
+  float sigma_d{};        // deviazione standard distanza
 
   Stats operator+=(const Stats& s) {
     v_media += s.v_media;
@@ -41,15 +59,16 @@ struct Stats {
   }
 };  // struttura delle statistiche
 
-class Sim {
+
+/*class Sim {
  private:
   //"_" alla fine è perché il giacomins vuole
   // l'underscore nelle variabili private tipo
-  double s_{};    // fattore di separazione
-  double a_{};    // fattore di allineamento
-  double c_{};    // fattore di coesione
-  double d_{};    // raggio visivo dei boids
-  double d_s_{};  // distanza minima
+  float s_{};    // fattore di separazione
+  float a_{};    // fattore di allineamento
+  float c_{};    // fattore di coesione
+  float d_{};    // raggio visivo dei boids
+  float d_s_{};  // distanza minima
                   // i parametri n e T vanno poi nel main
  public:
   std::vector<Boid> stormo_;   // insieme dei boid;
@@ -59,10 +78,10 @@ class Sim {
   void alignment_and_cohesion();
   void travel();       // aggiornamento delle posizioni dei boid
   Stats statistics();  // dichiarazione della funzione statistics
-  double abs_distance(const Boid& boid_i, const Boid& boid_j);
+  float abs_distance(const Boid& boid_i, const Boid& boid_j);
   void GetParams(
-      double s1, double a1, double c1, double d1,
-      double ds1);  // DIchiarazione funzione che gestisce i parametri
-};
+      float s1, float a1, float c1, float d1,
+      float ds1);  // DIchiarazione funzione che gestisce i parametri
+};*/
 
 #endif

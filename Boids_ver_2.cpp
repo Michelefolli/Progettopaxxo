@@ -5,9 +5,33 @@
 #include <numeric>
 #include <vector>
 
-void Boid::limit() {
+const int width =1920;
+const int height = 1080;
+void repulsive_border(Boid& boid) {
+  if (boid.position.x < 80) {  // && boid.velocity.x <= 0) {
+    boid.velocity.x +=
+        (boid.velocity.norm()) * (1) *
+        (1 / std::pow(boid.position.x,
+                      0.3));  // il fattore additivo è per evitare
+                              // che i boid si fermino in teoria
+  }
+  if (boid.position.y < 80) {  //&& boid.velocity.y <= 0) {
+    boid.velocity.y +=
+        (boid.velocity.norm()) * (1) * (1 / std::pow(boid.position.y, 0.3));
+  }
+  if (boid.position.x > (width - 80)) {  //&& boid.velocity.x >= 0) {
+    boid.velocity.x += (boid.velocity.norm()) * (-1) *
+                       (1 / std::pow((width - boid.position.x), 0.3));
+  }
+  if (boid.position.y > (height - 80)) {  //&& boid.velocity.y >= 0) {
+    boid.velocity.y += (boid.velocity.norm()) * (-1) *
+                       (1 / std::pow((height - boid.position.y), 0.3));
+  }
+}
+
+void Boid::limit(float max_speed) {
   if (this->velocity.norm() > max_speed) {
-    double norm = this->velocity.norm();
+    float norm = this->velocity.norm();
 
     this->velocity = {this->velocity.x * max_speed * (1 / norm),
                       this->velocity.y * max_speed * (1 / norm)};
@@ -16,85 +40,95 @@ void Boid::limit() {
    // direzione è dividere per la norma del vettore e poi moltiplicarlo per la
    // velocità massima
 
-void Sim::add(const Boid& boid) {
+/*void Sim::add(const Boid& boid) {
   stormo_.push_back(boid);
 }  // per aggiungere boid allo stormo
 
-void Sim::GetParams(double s, double a, double c, double d, double ds) {
+void Sim::GetParams(float s, float a, float c, float d, float ds) {
   s_ = s;
   a_ = a;
   c_ = c;
   d_ = d;
   d_s_ = ds;
-}
+}*/
 
-double Sim::abs_distance(const Boid& boid_i, const Boid& boid_j) {
-  return (boid_i.position - boid_j.position).norm();
+float Boid::abs_distance_from(const Boid& boid_j) {
+  return (this->position - boid_j.position).norm();
 };  // modulo della distanza tra due boid
 
-void Sim::separation() {
-  for (Boid& boid : stormo_) {
-    std::vector<Boid> subvector;
-    std::copy_if(
-        stormo_.begin(), stormo_.end(), std::back_inserter(subvector),
-        [&boid, this](const Boid& other_boid) {
-          return abs_distance(boid, other_boid) < d_s_;
-        });  // ora il vettore subvector contiene tutti i boid a distanza d_s_
-    Vec_2d v_sep =
-        std::accumulate(subvector.begin(), subvector.end(), Vec_2d(0., 0.),
-                        [&boid](Vec_2d sum, const Boid& other_boid) {
-                          return sum += (other_boid.position - boid.position);
-                        }) *
-        (-s_);
-    boid.velocity += v_sep;
-  };
-}  // calcolo della velocità di separazione. Questa è testata e funziona
+Vec_2d Boid::separation(const std::vector<Boid>& stormo, const float& sep,
+                        const float& dist_sep) {
+  std::vector<Boid> subvector;
+  std::copy_if(
+      stormo.begin(), stormo.end(), std::back_inserter(subvector),
+      [&dist_sep, this](const Boid& other_boid) {
+        return abs_distance_from(other_boid) < dist_sep;
+      });  // ora il vettore subvector contiene tutti i boid a distanza d_s_
+  Vec_2d v_sep =
+      std::accumulate(subvector.begin(), subvector.end(), Vec_2d(0., 0.),
+                      [this](Vec_2d sum, const Boid& other_boid) {
+                        return sum += (other_boid.position - this->position);
+                      }) *
+      (-sep);
+  return v_sep;
+};  // calcolo della velocità di separazione. Questa è testata e funziona
 
-void Sim::alignment_and_cohesion() {
-  for (Boid& boid : stormo_) {
-    std::vector<Boid> subvector;
-    std::copy_if(
-        stormo_.begin(), stormo_.end(), std::back_inserter(subvector),
-        [&boid, this](const Boid& other_boid) {
-          return abs_distance(boid, other_boid) < d_;
-        });  // ora il vettore subvector contiene tutti i boid a distanza d_s_
-    double n = static_cast<double>(subvector.size());
-    if (n > 1) {  // evita la divisione per 0
-      Vec_2d subboids_velocity_sum =
-          std::accumulate(subvector.begin(), subvector.end(), Vec_2d(0., 0.),
-                          [](Vec_2d sum, const Boid& other_boid) {
-                            return sum += other_boid.velocity;
-                          }) -
-          boid.velocity;
-      Vec_2d v_alignment =
-          (subboids_velocity_sum * (1 / (n - 1)) - boid.velocity) * a_;
-      // calcolo della velocità di allineamento
-      Vec_2d center_of_mass =
-          std::accumulate(subvector.begin(), subvector.end(), Vec_2d(0., 0.),
-                          [&n](Vec_2d sum, const Boid& boid_j) {
-                            return sum += (boid_j.position * (1 / (n - 1)));
-                          }) -
-          boid.position *
-              (1 /
-               (n - 1));  // calcolo del centro di massa del subvector. Il
-                          // subvector contiene anche il boid di riferimento,
-                          // quindi dopo la sommatoria glielo togliamo
-      Vec_2d v_cohesion = (center_of_mass - boid.position) * c_;
-      boid.velocity += (v_alignment + v_cohesion);
-    }
-  }
+Vec_2d Boid::alignment_and_cohesion(const std::vector<Boid>& stormo,
+                                    const float& alig, const float& cohes,
+                                    const float& dist) {
+  std::vector<Boid> subvector;
+  std::copy_if(
+      stormo.begin(), stormo.end(), std::back_inserter(subvector),
+      [this, &dist](const Boid& other_boid) {
+        return abs_distance_from(other_boid) < dist;
+      });  // ora il vettore subvector contiene tutti i boid a distanza d_s_
+  float n = static_cast<float>(subvector.size());
+  if (n > 1) {  // evita la divisione per 0
+    Vec_2d subboids_velocity_sum =
+        std::accumulate(subvector.begin(), subvector.end(), Vec_2d(0., 0.),
+                        [](Vec_2d sum, const Boid& other_boid) {
+                          return sum += other_boid.velocity;
+                        }) -
+        this->velocity;
+    Vec_2d v_alignment =
+        (subboids_velocity_sum * (1 / (n - 1)) - this->velocity) * alig;
+    // calcolo della velocità di allineamento
+    Vec_2d center_of_mass =
+        std::accumulate(subvector.begin(), subvector.end(), Vec_2d(0., 0.),
+                        [&n](Vec_2d sum, const Boid& boid_j) {
+                          return sum += (boid_j.position * (1 / (n - 1)));
+                        }) -
+        this->position *
+            (1 / (n - 1));  // calcolo del centro di massa del subvector. Il
+                            // subvector contiene anche il boid di riferimento,
+                            // quindi dopo la sommatoria glielo togliamo
+    Vec_2d v_cohesion = (center_of_mass - this->position) * cohes;
+    return (v_alignment + v_cohesion);
+  } else
+    return {0, 0};
+};
+
+void Boid::update(Params params, const std::vector<Boid>& stormo,
+                  const float& max_speed) {
+  this->velocity +=
+      alignment_and_cohesion(stormo, params.alig, params.cohes, params.dist) +
+      separation(stormo, params.sep, params.dist_sep);
+  repulsive_border(*this);
+  this->limit(max_speed);
+  this->position += this->velocity;
 }
 
-void Sim::travel() {
+
+/*void Sim::travel() {
   for (Boid& boid : stormo_) {
     boid.position += boid.velocity;
   };
 }  // aggiornamento della posizione dei boid nello stormo
 
 Stats Sim::statistics() {
-  double N = stormo_.size();  // poi sarà il parametro N
+  float N = stormo_.size();  // poi sarà il parametro N
 
-  /* Vec_2d v_media = std::accumulate(
+   Vec_2d v_media = std::accumulate(
       stormo_.begin(), stormo_.end(), Vec_2d(0., 0.),
       [&N](Vec_2d res, const Boid& boid) {
         return res += boid.velocity * (1 / N);
@@ -104,7 +138,7 @@ Stats Sim::statistics() {
       [&N](Vec_2d res, const Boid& boid) {
         return res += boid.position * (1 / N);
       });  // calcolo della distanza media a parte perché serve come valore
-Stats stats = std::accumulate(
+  Stats stats = std::accumulate(
       stormo_.begin(), stormo_.end(), Stats(),
       [&N, &v_media, &d_media](Stats res, const Boid& boid) {
         return res +=
@@ -118,8 +152,6 @@ Stats stats = std::accumulate(
   stats.v_media = v_media;
   stats.d_media = d_media;
   return stats;
-
-*/
 
   Boid med_vals =
       std::accumulate(stormo_.begin(), stormo_.end(), Boid({0., 0.}, {0., 0.}),
@@ -145,4 +177,4 @@ Stats stats = std::accumulate(
   stats.v_media = med_vals.velocity;
   stats.d_media = med_vals.position;
   return stats;
-}
+}*/
