@@ -1,9 +1,11 @@
 #include <random>
 
-#include "Boids_ver_2.hpp"
+#include "Boids.hpp"
 
 const int width = sf::VideoMode::getDesktopMode().width;
 const int height = sf::VideoMode::getDesktopMode().height;
+//sono ridefinite che è una cosa molto stupida
+
 const float max_speed = 8;
 
 
@@ -39,13 +41,13 @@ int main() {
   Params params{0.3, 0.8, 0.3, 45,
                 20};  // parametri totalmente a caso, sono quasi sicuramente
                       // responsabili dello strano comportamento
-  std::vector<Boid> stormo;
-  for (int i = 0; i < 1000; ++i) {
+  std::vector<Boid> flock;
+  for (int i = 0; i < 600; ++i) {
     Boid boid(
         {static_cast<float>(std::rand() % width), static_cast<float>(std::rand() % height)},
         {velocity_distribution(generator), velocity_distribution(generator)});
 
-    stormo.push_back(boid);
+    flock.push_back(boid);
   }  // genera i boid casualmente e li aggiunge allo stormo
 
   while (window.isOpen()) {
@@ -57,8 +59,8 @@ int main() {
       }
     }  // permette di chiudere la finestra cliccado sulla x
     window.clear();  // pulisce la finestra ogni frame
-    for (auto& boid : stormo) {
-      boid.update(params, stormo,
+    for (auto& boid : flock) {
+      boid.update(params, flock,
                   max_speed);  // funzione che limita la velocità
 
       boid.draw_on(window);
