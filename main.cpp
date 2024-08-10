@@ -41,8 +41,11 @@ int main() {
   Params params{0.3, 0.8, 0.3, 45,
                 20};  // parametri totalmente a caso, sono quasi sicuramente
                       // responsabili dello strano comportamento
+  
+  int elapsed = 500 ; //millisecondi tra un'acquisizione e l'altra, ho messo 1 per non eccedere il tempo massimo di godbolt
+  int flock_size = 600 ;
   std::vector<Boid> flock;
-  for (int i = 0; i < 600; ++i) {
+  for (int i = 0; i < flock_size; ++i) {
     Boid boid(
         {static_cast<float>(std::rand() % width), static_cast<float>(std::rand() % height)},
         {velocity_distribution(generator), velocity_distribution(generator)});
@@ -50,7 +53,8 @@ int main() {
     flock.push_back(boid);
   }  // genera i boid casualmente e li aggiunge allo stormo
 
-  while (window.isOpen()) {
+  std::vector<Stats> timestamped_stats ;
+  /*while (window.isOpen()) {
     sf::Event event;
 
     while (window.pollEvent(event)) {
@@ -68,5 +72,16 @@ int main() {
     }  // disegna tutti i boid, ma non li fa vedere ancora, quello è display
     window.display();
   }
-  return 0;  // perché è un int main deve ritornare quando finisce
+  return 0;  // perché è un int main deve ritornare quando finisce */
+
+  std::thread first(update_Stats, std::cref(flock), std::ref(timestamped_stats), std::ref(flock_size), std::ref(elapsed), std::ref(window)) ;
+  std::thread second(simulation, std::ref(window), std::ref(flock), std::ref(params), std::ref(max_speed));
+
+  first.join();
+  second.join();
+
+  void printStats(std::vector<Stats>& timestamped_stats) ;
+
+  std::cout << " The simulation is complete!" ; 
+
 }

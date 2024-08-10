@@ -3,6 +3,11 @@
 #include <SFML/Graphics.hpp>
 #include <cmath>
 #include <vector>
+#include<chrono>
+#include<thread>
+#include<iostream>
+
+using namespace std::chrono;
 
 struct Vec_2d {
   Vec_2d(float x_val, float y_val)
@@ -59,6 +64,7 @@ struct Stats {
   Vec_2d d_mean{0., 0.};  // distanza media
   float sigma_v{};         // deviazione stardard velocità
   float sigma_d{};         // deviazione standard distanza
+  float time{};
 
   Stats& operator+=(const Stats& s) {
     v_mean += s.v_mean;
@@ -69,6 +75,12 @@ struct Stats {
   }
 };  // struttura delle statistiche
 
-Stats statistics(const std::vector<Boid>& flock); //calcola le statistiche dello stormo in un determinato momento
+Stats statistics(const std::vector<Boid>& flock, std::chrono::time_point<steady_clock> start_time); //calcola le statistiche dello stormo in un determinato momento
+
+void simulation(sf::RenderWindow& window, std::vector<Boid>& flock, Params& params, const float& max_speed);
+void pause_thread(int& time_leap);
+void fillStatsVector(const std::vector<Boid>& flock, std::vector<Stats>& vec, int& n, time_point<steady_clock>& start_time);
+void update_Stats(const std::vector<Boid>& flock, std::vector<Stats>& vec, int& n, int& elapsed, sf::RenderWindow& window);
+void printStats(std::vector<Stats>& vec);
 
 #endif

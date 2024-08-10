@@ -1,9 +1,11 @@
 #include "Boids.hpp"
-
 #include <algorithm>
 #include <cmath>
 #include <numeric>
 #include <vector>
+#include<chrono> 
+
+ 
 
 // non so dove vanno definite le variabili
 const float Pi = 3.14159265358979323846264f;
@@ -121,7 +123,38 @@ void Boid::draw_on(sf::RenderWindow& window) const {
   window.draw(shape);
 }  // disegna il boid come un triangolo orientato nella direzione di volo
 
-Stats statistics(const std::vector<Boid>& flock) {
+void simulation(sf::RenderWindow& window, std::vector<Boid>& flock, Params& params, const float& max_speed) {
+  while (window.isOpen()) {
+    sf::Event event;
+
+    while (window.pollEvent(event)) {
+      if (event.type == sf::Event::Closed) {
+        window.close();
+      }
+    }  // permette di chiudere la finestra cliccado sulla x
+    window.clear();  // pulisce la finestra ogni frame
+    for (auto& boid : flock) {
+      boid.update(params, flock,
+                  max_speed);  // funzione che limita la velocità
+
+      boid.draw_on(window);
+
+    }  // disegna tutti i boid, ma non li fa vedere ancora, quello è display
+    window.display();
+  }
+}
+
+
+Stats statistics(const std::vector<Boid>& flock, time_point<steady_clock> start_time) {
+ 
+  Stats stats{};  // chat gpt dice che è per evitare l'inizializzazione di
+                  // varabili inutili dentro gli accumulate
+  
+  time_point current_time = steady_clock::now()  ; //prendo il tempo attuale
+  auto time_span = duration_cast<duration<float>>(current_time-start_time) ; //calcolo il tempo trascorso tra l'inzio del ciclo (in Update_stats) 
+  stats.time = time_span.count() ; //assegno il valore del tempo di calcolo all'elemento stats
+
+ 
   float n = static_cast<float>(flock.size());  // dimensioni dello stormo
 
   Vec_2d v_mean = std::accumulate(flock.begin(), flock.end(), Vec_2d(0., 0.),
@@ -141,8 +174,6 @@ Stats statistics(const std::vector<Boid>& flock) {
       });  // calcolo della distanza media tra due boid, utilizza un nested
            // algorythm non so se è una cosa positiva.
 
-  Stats stats{};  // chat gpt dice che è per evitare l'inizializzazione di
-                  // varabili inutili dentro gli accumulate
   stats.v_mean = v_mean;
   stats.d_mean = d_mean;
   stats.sigma_v = std::accumulate(
@@ -168,3 +199,30 @@ Stats statistics(const std::vector<Boid>& flock) {
 
   return stats;
 } //funzione che restituisce le statistiches
+
+void pause_thread(int& time_leap) {  //funzione che fa dormire fino all'acquisizione successiva
+std::this_thread::sleep_for(milliseconds(time_leap)) ;
+} 
+
+void fillStatsVector(const std::vector<Boid>& flock, std::vector<Stats>& vec, int& n, time_point<steady_clock>& start_time) { //funzione che 
+                                                                                                                           //riempie il vettore
+    for (int i = 0; i < n; ++i) {                                                                                          //delle statistiche  
+        vec.push_back(statistics(flock, start_time));
+    }
+}
+
+void update_Stats(const std::vector<Boid>& flock, std::vector<Stats>& timestamped_stats, int& n, int& elapsed, sf::RenderWindow& window)  { //funzione che riassume il processo
+                                                                                                 //di acquisizione periodica delle statistiche
+auto start_time = steady_clock::now() ;
+
+while (window.isOpen()) {  //questo if era per controllare che compilasse, diventerà un while(window.isOpen)
+
+fillStatsVector(flock, timestamped_stats, n, start_time) ;
+pause_thread(elapsed)  ;
+
+    }
+
+}
+
+void printStats(std::vector<Stats>& vec) {} //placeholder per la funzione responsabile per la lettura del vettore contenente statistiche e timestamp,
+                     // il disegno dei grafici e la creazione del file di testo con le statistiche
