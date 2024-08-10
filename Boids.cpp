@@ -1,11 +1,11 @@
 #include "Boids.hpp"
+
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <iostream>
 #include <numeric>
 #include <vector>
-#include<chrono> 
-
- 
 
 // non so dove vanno definite le variabili
 const float Pi = 3.14159265358979323846264f;
@@ -81,8 +81,7 @@ const Vec_2d Boid::alignment_and_cohesion(const std::vector<Boid>& flock,
                           return sum += other_boid.velocity;
                         }) -
         velocity;
-    Vec_2d v_alignment =
-        (subboids_velocity_sum  / (n - 1) - velocity) * alig;
+    Vec_2d v_alignment = (subboids_velocity_sum / (n - 1) - velocity) * alig;
     // calcolo della velocità di allineamento
     Vec_2d center_of_mass =
         std::accumulate(subvector.begin(), subvector.end(), Vec_2d(0., 0.),
@@ -90,8 +89,8 @@ const Vec_2d Boid::alignment_and_cohesion(const std::vector<Boid>& flock,
                           return sum += (boid_j.position / (n - 1));
                         }) -
         position / (n - 1);  // calcolo del centro di massa del subvector. Il
-                            // subvector contiene anche il boid di riferimento,
-                            // quindi dopo la sommatoria glielo togliamo
+                             // subvector contiene anche il boid di riferimento,
+                             // quindi dopo la sommatoria glielo togliamo
     Vec_2d v_cohesion = (center_of_mass - position) * cohes;
     return (v_alignment + v_cohesion);
   } else
@@ -123,7 +122,8 @@ void Boid::draw_on(sf::RenderWindow& window) const {
   window.draw(shape);
 }  // disegna il boid come un triangolo orientato nella direzione di volo
 
-void simulation(sf::RenderWindow& window, std::vector<Boid>& flock, Params& params, const float& max_speed) {
+void simulation(sf::RenderWindow& window, std::vector<Boid>& flock,
+                Params& params, const float& max_speed) {
   while (window.isOpen()) {
     sf::Event event;
 
@@ -144,17 +144,19 @@ void simulation(sf::RenderWindow& window, std::vector<Boid>& flock, Params& para
   }
 }
 
-
-Stats statistics(const std::vector<Boid>& flock, time_point<steady_clock> start_time) {
- 
+Stats statistics(
+    const std::vector<Boid>& flock,
+    std::chrono::time_point<std::chrono::steady_clock> start_time) {
   Stats stats{};  // chat gpt dice che è per evitare l'inizializzazione di
                   // varabili inutili dentro gli accumulate
-  
-  time_point current_time = steady_clock::now()  ; //prendo il tempo attuale
-  auto time_span = duration_cast<duration<float>>(current_time-start_time) ; //calcolo il tempo trascorso tra l'inzio del ciclo (in Update_stats) 
-  stats.time = time_span.count() ; //assegno il valore del tempo di calcolo all'elemento stats
+  std::chrono::time_point current_time =
+      std::chrono::steady_clock::now();  // prendo il tempo attuale
+  auto time_span = std::chrono::duration_cast<std::chrono::duration<float>>(
+      current_time - start_time);  // calcolo il tempo trascorso tra l'inzio del
+                                   // ciclo (in Update_stats)
+  stats.time = time_span.count();  // assegno il valore del tempo di calcolo
+                                   // all'elemento stats
 
- 
   float n = static_cast<float>(flock.size());  // dimensioni dello stormo
 
   Vec_2d v_mean = std::accumulate(flock.begin(), flock.end(), Vec_2d(0., 0.),
@@ -174,8 +176,8 @@ Stats statistics(const std::vector<Boid>& flock, time_point<steady_clock> start_
       });  // calcolo della distanza media tra due boid, utilizza un nested
            // algorythm non so se è una cosa positiva.
 
-  stats.v_mean = v_mean;
-  stats.d_mean = d_mean;
+  stats.v_mean = v_mean.norm();
+  stats.d_mean = d_mean.norm();
   stats.sigma_v = std::accumulate(
       flock.begin(), flock.end(), 0.f,
       [&v_mean, &n](float sum, const Boid& boid) {
@@ -198,31 +200,71 @@ Stats statistics(const std::vector<Boid>& flock, time_point<steady_clock> start_
       });
 
   return stats;
-} //funzione che restituisce le statistiches
+}  // funzione che restituisce le statistiches
 
-void pause_thread(int& time_leap) {  //funzione che fa dormire fino all'acquisizione successiva
-std::this_thread::sleep_for(milliseconds(time_leap)) ;
-} 
-
-void fillStatsVector(const std::vector<Boid>& flock, std::vector<Stats>& vec, int& n, time_point<steady_clock>& start_time) { //funzione che 
-                                                                                                                           //riempie il vettore
-    for (int i = 0; i < n; ++i) {                                                                                          //delle statistiche  
-        vec.push_back(statistics(flock, start_time));
-    }
+void pause_thread(int& time_leap) {  // funzione che fa dormire fino
+                                     // all'acquisizione successiva
+  std::this_thread::sleep_for(std::chrono::milliseconds(time_leap));
 }
 
-void update_Stats(const std::vector<Boid>& flock, std::vector<Stats>& timestamped_stats, int& n, int& elapsed, sf::RenderWindow& window)  { //funzione che riassume il processo
-                                                                                                 //di acquisizione periodica delle statistiche
-auto start_time = steady_clock::now() ;
-
-while (window.isOpen()) {  //questo if era per controllare che compilasse, diventerà un while(window.isOpen)
-
-fillStatsVector(flock, timestamped_stats, n, start_time) ;
-pause_thread(elapsed)  ;
-
-    }
-
+void fillStatsVector(const std::vector<Boid>& flock, std::vector<Stats>& vec,
+                     int& n,
+                     std::chrono::time_point<std::chrono::steady_clock>&
+                         start_time) {  // funzione che
+                                        // riempie il vettore
+  for (int i = 0; i < n; ++i) {         // delle statistiche
+    vec.push_back(statistics(flock, start_time));
+  }
 }
 
-void printStats(std::vector<Stats>& vec) {} //placeholder per la funzione responsabile per la lettura del vettore contenente statistiche e timestamp,
-                     // il disegno dei grafici e la creazione del file di testo con le statistiche
+void update_Stats(
+    const std::vector<Boid>& flock, std::vector<Stats>& timestamped_stats,
+    int& n, int& elapsed,
+    sf::RenderWindow& window) {  // funzione che riassume il processo
+                                 // di acquisizione periodica delle statistiche
+  auto start_time = std::chrono::steady_clock::now();
+
+  while (window.isOpen()) {  // questo if era per controllare che compilasse,
+                             // diventerà un while(window.isOpen)
+
+    fillStatsVector(flock, timestamped_stats, n, start_time);
+    pause_thread(elapsed);
+  }
+}
+
+void printStats(const std::vector<Stats>& vec) {
+  int vec_size = vec.size();
+  for (int i{}; i < vec_size; i++) {
+    std::cout << vec[i].d_mean << "  " << vec[i].sigma_d << "  "
+              << vec[i].v_mean << vec[i].sigma_d << '\n' ;
+  };
+
+}  // placeholder per la funzione responsabile per la lettura del vettore
+   // contenente statistiche e timestamp,
+// il disegno dei grafici e la creazione del file di testo con le statistiche
+
+int getUserInput() {
+  int conditional{};
+  while (true) {
+    std::cout << "Input 1 if you want to export the stats as a .txt file, "
+                 "otherwise input 0: ";
+    std::cin >> conditional;
+
+    if (conditional == 0 || conditional == 1) {
+      break;
+    } else {
+      std::cout << "Invalid input. Please enter 0 or 1.\n";
+    }
+  }
+  return conditional;
+}
+
+void exportStatsIfNeeded(int conditional,
+                         const std::vector<Stats>& timestamped_stats) {
+  if (conditional == 1) {
+    printStats(timestamped_stats);
+    std::cout << "The stats were successfully exported.\n";
+  } else {
+    std::cout << "The stats were not exported.\n";
+  }
+}

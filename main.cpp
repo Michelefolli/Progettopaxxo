@@ -4,10 +4,9 @@
 
 const int width = sf::VideoMode::getDesktopMode().width;
 const int height = sf::VideoMode::getDesktopMode().height;
-//sono ridefinite che è una cosa molto stupida
+// sono ridefinite che è una cosa molto stupida
 
 const float max_speed = 8;
-
 
 /*void out_of_border(Boid& boid) {
   if (boid.position.x < 0) {
@@ -41,47 +40,32 @@ int main() {
   Params params{0.3, 0.8, 0.3, 45,
                 20};  // parametri totalmente a caso, sono quasi sicuramente
                       // responsabili dello strano comportamento
-  
-  int elapsed = 500 ; //millisecondi tra un'acquisizione e l'altra, ho messo 1 per non eccedere il tempo massimo di godbolt
-  int flock_size = 600 ;
+
+  int elapsed = 500;  // millisecondi tra un'acquisizione e l'altra, ho messo 1
+                       // per non eccedere il tempo massimo di godbolt
+  int flock_size = 600;
   std::vector<Boid> flock;
   for (int i = 0; i < flock_size; ++i) {
     Boid boid(
-        {static_cast<float>(std::rand() % width), static_cast<float>(std::rand() % height)},
+        {static_cast<float>(std::rand() % width),
+         static_cast<float>(std::rand() % height)},
         {velocity_distribution(generator), velocity_distribution(generator)});
 
     flock.push_back(boid);
   }  // genera i boid casualmente e li aggiunge allo stormo
 
-  std::vector<Stats> timestamped_stats ;
-  /*while (window.isOpen()) {
-    sf::Event event;
+  std::vector<Stats> timestamped_stats;
 
-    while (window.pollEvent(event)) {
-      if (event.type == sf::Event::Closed) {
-        window.close();
-      }
-    }  // permette di chiudere la finestra cliccado sulla x
-    window.clear();  // pulisce la finestra ogni frame
-    for (auto& boid : flock) {
-      boid.update(params, flock,
-                  max_speed);  // funzione che limita la velocità
-
-      boid.draw_on(window);
-
-    }  // disegna tutti i boid, ma non li fa vedere ancora, quello è display
-    window.display();
-  }
-  return 0;  // perché è un int main deve ritornare quando finisce */
-
-  std::thread first(update_Stats, std::cref(flock), std::ref(timestamped_stats), std::ref(flock_size), std::ref(elapsed), std::ref(window)) ;
-  std::thread second(simulation, std::ref(window), std::ref(flock), std::ref(params), std::ref(max_speed));
+  std::thread first(update_Stats, std::cref(flock), std::ref(timestamped_stats),
+                    std::ref(flock_size), std::ref(elapsed), std::ref(window));
+  simulation(window, flock, params, max_speed);
 
   first.join();
-  second.join();
 
-  void printStats(std::vector<Stats>& timestamped_stats) ;
+  int conditional = getUserInput(); //chiediamo all'utente se vuole stampare
+  exportStatsIfNeeded(conditional, timestamped_stats); //stampiamo se rechiesto
 
-  std::cout << " The simulation is complete!" ; 
+  std::cout << "The simulation is complete! \n ";
 
+  return 0;
 }
