@@ -1,11 +1,12 @@
 #ifndef BOIDS_HPP
 #define BOIDS_HPP
 #include <SFML/Graphics.hpp>
+#include <chrono>
 #include <cmath>
+#include <iostream>
+#include <sstream>
+#include <thread>
 #include <vector>
-#include<chrono>
-#include<thread>
-#include<iostream>
 
 using namespace std::chrono;
 
@@ -24,7 +25,14 @@ struct Vec_2d {
     return *this;
   }
 
-  float norm() const { return std::sqrt(x * x + y * y); } //norma del vettore
+  float norm() const {
+    float n{};
+    n = std::sqrt(x * x + y * y);
+    if (n == 0) {
+      return 0;
+    }
+    return n;
+  }  // norma del vettore
 };  // vettore a due dimensioni. DUBBIO: operatori e norma da definire nel cpp?
 
 struct Params {
@@ -33,7 +41,7 @@ struct Params {
   float cohes{};     // fattore di coesione
   float dist{};      // raggio visivo dei boids
   float dist_sep{};  // distanza minima
-}; //parametri dello stormo
+};  // parametri dello stormo
 
 class Boid {
  private:
@@ -41,30 +49,38 @@ class Boid {
   Vec_2d velocity;
   void limit(const float& max_speed);  // limite di velocità
   const Vec_2d separation(const std::vector<Boid>& flock, const float& sep,
-                          const float& dist_sep) const; //calcola il vettore velocità di separazione
+                          const float& dist_sep)
+      const;  // calcola il vettore velocità di separazione
   const Vec_2d alignment_and_cohesion(const std::vector<Boid>& flock,
                                       const float& alig, const float& cohes,
-                                      const float& dist) const; //calcola il vettore velocità di separazione e coesione
+                                      const float& dist)
+      const;  // calcola il vettore velocità di separazione e coesione
+  void avoid_edges(const int width, const int height);
 
  public:
-  float abs_distance_from(const Boid& boid_j) const; //valore assoluto della distanza tra due boid
+  float abs_distance_from(
+      const Boid& boid_j) const;  // valore assoluto della distanza tra due boid
   Boid(Vec_2d position_val, Vec_2d velocity_val)
       : position(position_val), velocity(velocity_val) {}
   const Vec_2d& getPosition() const;
-  const Vec_2d& getVelocity() const;  
-  void setPosition(const Vec_2d& pos); 
+  const Vec_2d& getVelocity() const;
+  void setPosition(const Vec_2d& pos);
   void setVelocity(const Vec_2d& vel);
   void update(const Params& params, const std::vector<Boid>& flock,
-              const float& max_speed); //aggiunge i modificatori di velocità, limita la velocità e poi sposta il boid
-  void draw_on(sf::RenderWindow& window) const; //disegna il boid sulla finestra sfml
+              const float& max_speed,
+              const sf::RenderWindow&
+                  window);  // aggiunge i modificatori di velocità, limita
+                            // la velocità e poi sposta il boid
+  void draw_on(
+      sf::RenderWindow& window) const;  // disegna il boid sulla finestra sfml
 };
 
 struct Stats {
-  Vec_2d v_mean{0., 0.};  // velocità media
-  Vec_2d d_mean{0., 0.};  // distanza media
-  float sigma_v{};         // deviazione stardard velocità
-  float sigma_d{};         // deviazione standard distanza
-  float time{};
+  float v_mean;   // velocità media
+  float d_mean;   // distanza media
+  float sigma_v;  // deviazione stardard velocità
+  float sigma_d;  // deviazione standard distanza
+  float time;
 
   Stats& operator+=(const Stats& s) {
     v_mean += s.v_mean;
@@ -75,12 +91,17 @@ struct Stats {
   }
 };  // struttura delle statistiche
 
-Stats statistics(const std::vector<Boid>& flock, std::chrono::time_point<steady_clock> start_time); //calcola le statistiche dello stormo in un determinato momento
+Stats statistics(std::vector<Boid>& flock);  // calcola le statistiche dello
+                                             // stormo in un determinato momento
 
-void simulation(sf::RenderWindow& window, std::vector<Boid>& flock, Params& params, const float& max_speed);
-void pause_thread(int& time_leap);
-void fillStatsVector(const std::vector<Boid>& flock, std::vector<Stats>& vec, int& n, time_point<steady_clock>& start_time);
-void update_Stats(const std::vector<Boid>& flock, std::vector<Stats>& vec, int& n, int& elapsed, sf::RenderWindow& window);
-void printStats(std::vector<Stats>& vec);
+void simulation(sf::RenderWindow& window, std::vector<Boid>& flock,
+                Params& params, const float& max_speed, sf::Clock& clock,
+                float& timePassed, std::vector<Stats>& Statistics_vector);
+// void pause_thread(int& time_leap);
+// void fillStatsVector(const std::vector<Boid>& flock, std::vector<Stats>& vec,
+//                      int& n, time_point<steady_clock>& start_time);
+// void update_Stats(const std::vector<Boid>& flock, std::vector<Stats>& vec,
+//                   int& n, int& elapsed, sf::RenderWindow& window);
+void printStats(const std::vector<Stats>& vec);
 
 #endif

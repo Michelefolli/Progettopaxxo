@@ -1,22 +1,18 @@
 #include "Boids.hpp"
-#include <algorithm>
-#include <cmath>
-#include <numeric>
-#include <vector>
-#include<chrono> 
 
- 
+#include <algorithm>
+#include <chrono>
+#include <cmath>
+#include <iostream>
+#include <numeric>
+#include <sstream>
+#include <vector>
 
 // non so dove vanno definite le variabili
 const float Pi = 3.14159265358979323846264f;
-const int width = 1920;
-const int height = 1080;
 
 // funzione che fa in modo che i boid evitino i bordi della finestra sfml
-void repulsive_border(Boid& boid) {
-  auto position = boid.getPosition();
-  auto velocity = boid.getVelocity();
-
+void Boid::avoid_edges(const int width, const int height) {
   if (position.x < 80) {
     velocity.x += (velocity.norm()) * (1) * (1 / std::pow(position.x, 0.25f));
   }
@@ -31,7 +27,7 @@ void repulsive_border(Boid& boid) {
     velocity.y +=
         (velocity.norm()) * (-1) * (1 / std::pow((height - position.y), 0.25f));
   };
-  boid.setVelocity(velocity);
+
 }  // la potenza deve essere di ordine pari in modo da recuperare i boid che per
    // sbagli0 finiscono fuori schermo
 
@@ -49,16 +45,14 @@ float Boid::abs_distance_from(const Boid& boid_j) const {
 
 const Vec_2d Boid::separation(const std::vector<Boid>& flock, const float& sep,
                               const float& dist_sep) const {
-  std::vector<Boid> subvector;
-  std::copy_if(
-      flock.begin(), flock.end(), std::back_inserter(subvector),
-      [&dist_sep, this](const Boid& other_boid) {
-        return abs_distance_from(other_boid) < dist_sep;
-      });  // ora il vettore subvector contiene tutti i boid a distanza d_s_
   Vec_2d v_sep =
-      std::accumulate(subvector.begin(), subvector.end(), Vec_2d(0., 0.),
-                      [this](Vec_2d sum, const Boid& other_boid) {
-                        return sum += (other_boid.position - position);
+      std::accumulate(flock.begin(), flock.end(), Vec_2d(0., 0.),
+                      [this, &dist_sep](Vec_2d sum, const Boid& other_boid) {
+                        if (abs_distance_from(other_boid) <= dist_sep) {
+                          Vec_2d diff = other_boid.getPosition() - position;
+                          sum += diff;
+                        }
+                        return sum;
                       }) *
       (-sep);
   return v_sep;
@@ -67,35 +61,33 @@ const Vec_2d Boid::separation(const std::vector<Boid>& flock, const float& sep,
 const Vec_2d Boid::alignment_and_cohesion(const std::vector<Boid>& flock,
                                           const float& alig, const float& cohes,
                                           const float& dist) const {
-  std::vector<Boid> subvector;
-  std::copy_if(
-      flock.begin(), flock.end(), std::back_inserter(subvector),
-      [this, &dist](const Boid& other_boid) {
-        return abs_distance_from(other_boid) < dist;
-      });  // ora il vettore subvector contiene tutti i boid a distanza d_s_
-  float n = static_cast<float>(subvector.size());
-  if (n > 1) {  // evita la divisione per 0
-    Vec_2d subboids_velocity_sum =
-        std::accumulate(subvector.begin(), subvector.end(), Vec_2d(0., 0.),
-                        [](Vec_2d sum, const Boid& other_boid) {
-                          return sum += other_boid.velocity;
-                        }) -
-        velocity;
-    Vec_2d v_alignment =
-        (subboids_velocity_sum  / (n - 1) - velocity) * alig;
-    // calcolo della velocità di allineamento
-    Vec_2d center_of_mass =
-        std::accumulate(subvector.begin(), subvector.end(), Vec_2d(0., 0.),
-                        [&n](Vec_2d sum, const Boid& boid_j) {
-                          return sum += (boid_j.position / (n - 1));
-                        }) -
-        position / (n - 1);  // calcolo del centro di massa del subvector. Il
-                            // subvector contiene anche il boid di riferimento,
-                            // quindi dopo la sommatoria glielo togliamo
-    Vec_2d v_cohesion = (center_of_mass - position) * cohes;
-    return (v_alignment + v_cohesion);
+  int count = 0;
+
+  std::pair<Vec_2d, Vec_2d> sums =
+      std::accumulate(  // sommatoria per posizioni e velocità
+          flock.begin(), flock.end(),
+          std::make_pair(Vec_2d(0.f, 0.f), Vec_2d(0.f, 0.f)),
+          [this, dist, &count](std::pair<Vec_2d, Vec_2d> acc,
+                               const Boid& otherBoid) {
+            if (this != &otherBoid &&
+                this->abs_distance_from(otherBoid) <= dist) {
+              acc.first += otherBoid.velocity;   // somma delle velocità
+              acc.second += otherBoid.position;  // Somma delle posizioni
+              ++count;
+            }
+            return acc;
+          });
+
+  if (count > 0) {
+    Vec_2d avg_velocity = sums.first / static_cast<float>(count);
+    Vec_2d center_of_mass = sums.second / static_cast<float>(count);
+
+    Vec_2d v_alig = (avg_velocity - velocity) * alig;
+    Vec_2d v_cohes = (center_of_mass - position) * cohes;
+
+    return v_alig + v_cohes;
   } else
-    return {0, 0};
+    return Vec_2d(0, 0);
 };
 
 // getters and setters:
@@ -105,11 +97,14 @@ void Boid::setPosition(const Vec_2d& pos) { position = pos; }
 void Boid::setVelocity(const Vec_2d& vel) { velocity = vel; }
 
 void Boid::update(const Params& params, const std::vector<Boid>& flock,
-                  const float& max_speed) {
+                  const float& max_speed, const sf::RenderWindow& window) {
   velocity +=
       alignment_and_cohesion(flock, params.alig, params.cohes, params.dist) +
       separation(flock, params.sep, params.dist_sep);
-  repulsive_border(*this);
+  const int width = window.getSize().x;
+  const int height = window.getSize().y;
+
+  avoid_edges(width, height);
   limit(max_speed);
   position += velocity;
 }  // questa funzione aggiorna la velocità del boid e poi lo sposta
@@ -123,38 +118,7 @@ void Boid::draw_on(sf::RenderWindow& window) const {
   window.draw(shape);
 }  // disegna il boid come un triangolo orientato nella direzione di volo
 
-void simulation(sf::RenderWindow& window, std::vector<Boid>& flock, Params& params, const float& max_speed) {
-  while (window.isOpen()) {
-    sf::Event event;
-
-    while (window.pollEvent(event)) {
-      if (event.type == sf::Event::Closed) {
-        window.close();
-      }
-    }  // permette di chiudere la finestra cliccado sulla x
-    window.clear();  // pulisce la finestra ogni frame
-    for (auto& boid : flock) {
-      boid.update(params, flock,
-                  max_speed);  // funzione che limita la velocità
-
-      boid.draw_on(window);
-
-    }  // disegna tutti i boid, ma non li fa vedere ancora, quello è display
-    window.display();
-  }
-}
-
-
-Stats statistics(const std::vector<Boid>& flock, time_point<steady_clock> start_time) {
- 
-  Stats stats{};  // chat gpt dice che è per evitare l'inizializzazione di
-                  // varabili inutili dentro gli accumulate
-  
-  time_point current_time = steady_clock::now()  ; //prendo il tempo attuale
-  auto time_span = duration_cast<duration<float>>(current_time-start_time) ; //calcolo il tempo trascorso tra l'inzio del ciclo (in Update_stats) 
-  stats.time = time_span.count() ; //assegno il valore del tempo di calcolo all'elemento stats
-
- 
+Stats statistics(std::vector<Boid>& flock) {
   float n = static_cast<float>(flock.size());  // dimensioni dello stormo
 
   Vec_2d v_mean = std::accumulate(flock.begin(), flock.end(), Vec_2d(0., 0.),
@@ -174,8 +138,10 @@ Stats statistics(const std::vector<Boid>& flock, time_point<steady_clock> start_
       });  // calcolo della distanza media tra due boid, utilizza un nested
            // algorythm non so se è una cosa positiva.
 
-  stats.v_mean = v_mean;
-  stats.d_mean = d_mean;
+  Stats stats{};  // chat gpt dice che è per evitare l'inizializzazione di
+                  // varabili inutili dentro gli accumulate
+  stats.v_mean = v_mean.norm();
+  stats.d_mean = d_mean.norm();
   stats.sigma_v = std::accumulate(
       flock.begin(), flock.end(), 0.f,
       [&v_mean, &n](float sum, const Boid& boid) {
@@ -196,33 +162,46 @@ Stats statistics(const std::vector<Boid>& flock, time_point<steady_clock> start_
             });
         return sum += d_sigma_i / n;
       });
-
   return stats;
-} //funzione che restituisce le statistiches
-
-void pause_thread(int& time_leap) {  //funzione che fa dormire fino all'acquisizione successiva
-std::this_thread::sleep_for(milliseconds(time_leap)) ;
-} 
-
-void fillStatsVector(const std::vector<Boid>& flock, std::vector<Stats>& vec, int& n, time_point<steady_clock>& start_time) { //funzione che 
-                                                                                                                           //riempie il vettore
-    for (int i = 0; i < n; ++i) {                                                                                          //delle statistiche  
-        vec.push_back(statistics(flock, start_time));
-    }
 }
 
-void update_Stats(const std::vector<Boid>& flock, std::vector<Stats>& timestamped_stats, int& n, int& elapsed, sf::RenderWindow& window)  { //funzione che riassume il processo
-                                                                                                 //di acquisizione periodica delle statistiche
-auto start_time = steady_clock::now() ;
+void simulation(sf::RenderWindow& window, std::vector<Boid>& flock,
+                Params& params, const float& max_speed, sf::Clock& clock,
+                float& timePassed, std::vector<Stats>& Statistics_vector) {
+  while (window.isOpen()) {
+    sf::Event event;
 
-while (window.isOpen()) {  //questo if era per controllare che compilasse, diventerà un while(window.isOpen)
+    while (window.pollEvent(event)) {
+      if (event.type == sf::Event::Closed) {
+        window.close();
+      }
+    }  // permette di chiudere la finestra cliccado sulla x
+    window.clear();  // pulisce la finestra ogni frame
+    for (auto& boid : flock) {
+      boid.update(params, flock, max_speed,
+                  window);  // update
 
-fillStatsVector(flock, timestamped_stats, n, start_time) ;
-pause_thread(elapsed)  ;
+      boid.draw_on(window);
 
+    }  // disegna tutti i boid, ma non li fa vedere ancora, quello è display
+    window.display();
+    if (clock.getElapsedTime().asSeconds() >= 1.0) {
+      Stats stat_i = statistics(flock); // calcola le statistiche
+      stat_i.time = timePassed; //assegna il tempo
+      ++timePassed;
+      Statistics_vector.push_back(stat_i); 
+      clock.restart();
     }
-
+  }
 }
 
-void printStats(std::vector<Stats>& vec) {} //placeholder per la funzione responsabile per la lettura del vettore contenente statistiche e timestamp,
-                     // il disegno dei grafici e la creazione del file di testo con le statistiche
+void printStats(const std::vector<Stats>& vec) {
+  // Use std::for_each to iterate over each element in the vector
+  std::for_each(vec.begin(), vec.end(), [](const Stats& stat) {
+    std::cout << stat.d_mean << "  " << stat.sigma_d << "  " << stat.v_mean
+              << "  " << stat.sigma_v << "  " << stat.time << "\n";
+  });
+
+}  // placeholder per la funzione responsabile per la lettura del vettore
+   // contenente statistiche e timestamp,
+// il disegno dei grafici e la creazione del file di testo con le statistiche
