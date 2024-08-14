@@ -4,7 +4,6 @@
 #include <chrono>
 #include <cmath>
 #include <iostream>
-#include <thread>
 #include <vector>
 
 struct Vec_2d {
@@ -23,6 +22,7 @@ struct Vec_2d {
   }
 
   float norm() const { return std::sqrt(x * x + y * y); }  // norma del vettore
+ 
 };  // vettore a due dimensioni. DUBBIO: operatori e norma da definire nel cpp?
 
 struct Params {
@@ -75,21 +75,14 @@ struct Stats {
     d_mean += s.d_mean;
     sigma_v += s.sigma_v;
     sigma_d += s.sigma_d;
+    time += 0;
     return *this;
   }
 
-  friend std::ostream& operator<<(std::ostream& os,
-                                  const Stats& s) {  // overload operatore <<
-
-    os << s.d_mean << "   " << "   " << s.sigma_d << "   " << s.v_mean << "   "
-       << s.sigma_v << "   " << s.time;
-
-    return os;
-  }
 };  // struttura delle statistiche
 
 Stats statistics(const std::vector<Boid>& flock,
-                 std::chrono::time_point<std::chrono::steady_clock>
+                 std::chrono::time_point<std::chrono::steady_clock>&
                      start_time);  // calcola le statistiche dello stormo in un
                                    // determinato momento
 
@@ -98,12 +91,14 @@ void simulation(sf::RenderWindow& window, std::vector<Boid>& flock,
 
 void pause_thread(int& time_leap);
 void fillStatsVector(
-    const std::vector<Boid>& flock, std::vector<Stats>& vec, int& n,
+    std::vector<Boid> flock, std::vector<Stats>& vec,
     std::chrono::time_point<std::chrono::steady_clock>& start_time);
-void update_Stats(const std::vector<Boid>& flock, std::vector<Stats>& vec,
-                  int& n, int& elapsed, sf::RenderWindow& window);
+ void update_Stats(const std::vector<Boid>& flock, std::vector<Stats>& vec,
+                  int& elapsed, sf::RenderWindow& window);
 void printStats(const std::vector<Stats>& vec);
-int getUserInput();
-void exportStatsIfNeeded(int conditional,
-                         const std::vector<Stats>& timestamped_stats);
+int askTxt();
+void exportStats(const std::vector<Stats>& vec);
+void exportPlot(const std::vector<Stats>& vec);
+int askPng();
+void plotStats(const std::vector<Stats>& stats, int conditional, const std::string& name);
 #endif
