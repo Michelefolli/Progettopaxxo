@@ -9,6 +9,8 @@
 #include <numeric>
 #include <sstream>
 #include <vector>
+#include<mutex>
+
 // non so dove vanno definite le variabili
 const float Pi = 3.14159265358979323846264f;
 
@@ -146,7 +148,7 @@ void Boid::draw_on(sf::RenderWindow& window) const {
 }  // disegna il boid come un triangolo orientato nella direzione di volo
 
 void simulation(sf::RenderWindow& window, std::vector<Boid>& flock,
-                Params& params, const float& max_speed) {
+                Params& params, const float& max_speed, std::vector<Boid>& read, std::mutex& synchro) {
   const int width = static_cast<int>(sf::VideoMode::getDesktopMode().width);
   const int height = static_cast<int>(sf::VideoMode::getDesktopMode().height);
   while (window.isOpen()) {
@@ -166,14 +168,16 @@ void simulation(sf::RenderWindow& window, std::vector<Boid>& flock,
       boid.draw_on(window);
 
     }  // disegna tutti i boid, ma non li fa vedere ancora, quello è display
-
+    synchro.lock();
+    read = flock ;
+    synchro.unlock();
     window.display();
   }
 }
 
 Stats statistics(
     const std::vector<Boid>& flock,
-    std::chrono::time_point<std::chrono::steady_clock>& start_time) {
+    const std::chrono::time_point<std::chrono::steady_clock>& start_time) {
   Stats stats{};  // chat gpt dice che è per evitare l'inizializzazione di
                   // varabili inutili dentro gli accumulate
   std::chrono::time_point current_time =
@@ -232,8 +236,8 @@ Stats statistics(
   return stats;
 }  // funzione che restituisce le statistiches
 
-void fillStatsVector(std::vector<Boid> flock, std::vector<Stats>& vec,
-                     std::chrono::time_point<std::chrono::steady_clock>&
+void fillStatsVector(const std::vector<Boid>& flock, std::vector<Stats>& vec,
+                     const std::chrono::time_point<std::chrono::steady_clock>&
                          start_time) {  // funzione che
                                         // riempie il vettore
                                         // delle statistiche
@@ -244,18 +248,21 @@ void fillStatsVector(std::vector<Boid> flock, std::vector<Stats>& vec,
 void update_Stats(
     const std::vector<Boid>& flock, std::vector<Stats>& timestamped_stats,
     int& elapsed,
-    sf::RenderWindow& window) {  // funzione che riassume il processo
+    sf::RenderWindow& window, std::mutex& synchro ) {  // funzione che riassume il processo
                                  // di acquisizione periodica delle statistiche
   auto start_time = std::chrono::steady_clock::now();
   auto last_update_time = start_time;
   while (window.isOpen()) {  // questo if era per controllare che compilasse,
                              // diventerà un while(window.isOpen)
-
+    
     auto current_time = std::chrono::steady_clock::now();
     if (current_time - last_update_time >= std::chrono::milliseconds(elapsed)) {
+      synchro.lock() ;
       fillStatsVector(flock, timestamped_stats, start_time);
       last_update_time = current_time;
+      synchro.unlock();
     }
+    
   }
 }
 

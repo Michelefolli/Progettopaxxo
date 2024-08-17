@@ -7,6 +7,7 @@
 #include <sstream>
 #include <thread>
 #include <vector>
+#include<mutex>
 
 struct Vec_2d {
   Vec_2d(float x_val, float y_val)
@@ -86,19 +87,20 @@ struct Stats {
 };  // struttura delle statistiche
 
 Stats statistics(const std::vector<Boid>& flock,
-                 std::chrono::time_point<std::chrono::steady_clock>&
+                 const std::chrono::time_point<std::chrono::steady_clock>&
                      start_time);  // calcola le statistiche dello stormo in un
                                    // determinato momento
 
 void simulation(sf::RenderWindow& window, std::vector<Boid>& flock,
-                Params& params, const float& max_speed);
-
+                Params& params, const float& max_speed, std::vector<Boid>& read,
+                std::mutex& synchro);
 void pause_thread(int& time_leap);
 void fillStatsVector(
-    std::vector<Boid> flock, std::vector<Stats>& vec,
-    std::chrono::time_point<std::chrono::steady_clock>& start_time);
-void update_Stats(const std::vector<Boid>& flock, std::vector<Stats>& vec,
-                  int& elapsed, sf::RenderWindow& window);
+    const std::vector<Boid>& flock, std::vector<Stats>& vec,
+    const std::chrono::time_point<std::chrono::steady_clock>& start_time);
+void update_Stats(const std::vector<Boid>& flock,
+                  std::vector<Stats>& timestamped_stats, int& elapsed,
+                  sf::RenderWindow& window, std::mutex& synchro);
 void printStats(const std::vector<Stats>& vec);
 int askTxt();
 void exportStats(const std::vector<Stats>& vec);

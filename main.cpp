@@ -33,12 +33,13 @@ int main() {
     flock.push_back(boid);
   }  // genera i boid casualmente e li aggiunge allo stormo
 
+  auto reading_flock = flock ;
   std::vector<Stats> timestamped_stats;
+  std::mutex mtx; 
+  std::thread first(update_Stats, std::cref(reading_flock), std::ref(timestamped_stats),
+                    std::ref(frequency), std::ref(window), std::ref(mtx));
 
-  std::thread first(update_Stats, std::cref(flock), std::ref(timestamped_stats),
-                    std::ref(frequency), std::ref(window));
-
-  simulation(window, flock, params, max_speed);
+  simulation(window, flock, params, max_speed, reading_flock, mtx);
 
   first.join();  // chiediamo all'utente se vuole stampare
   exportStats(timestamped_stats);
