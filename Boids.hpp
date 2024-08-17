@@ -2,7 +2,6 @@
 #define BOIDS_HPP
 #include <SFML/Graphics.hpp>
 #include <chrono>
-#include <chrono>
 #include <cmath>
 #include <iostream>
 #include <sstream>
@@ -25,7 +24,7 @@ struct Vec_2d {
   }
 
   float norm() const { return std::sqrt(x * x + y * y); }  // norma del vettore
- 
+
 };  // vettore a due dimensioni. DUBBIO: operatori e norma da definire nel cpp?
 
 struct Params {
@@ -59,14 +58,11 @@ class Boid {
   const Vec_2d& getPosition() const;
   const Vec_2d& getVelocity() const;
   void setPosition(const Vec_2d& pos);
-  const Vec_2d& getVelocity() const;
-  void setPosition(const Vec_2d& pos);
   void setVelocity(const Vec_2d& vel);
   void update(const Params& params, const std::vector<Boid>& flock,
-              const float& max_speed,
-              const sf::RenderWindow&
-                  window);  // aggiunge i modificatori di velocità, limita
-                            // la velocità e poi sposta il boid
+              const float& max_speed, const int width,
+              const int height);  // aggiunge i modificatori di velocità, limita
+                                  // la velocità e poi sposta il boid
   void draw_on(
       sf::RenderWindow& window) const;  // disegna il boid sulla finestra sfml
 };
@@ -101,12 +97,13 @@ void pause_thread(int& time_leap);
 void fillStatsVector(
     std::vector<Boid> flock, std::vector<Stats>& vec,
     std::chrono::time_point<std::chrono::steady_clock>& start_time);
- void update_Stats(const std::vector<Boid>& flock, std::vector<Stats>& vec,
+void update_Stats(const std::vector<Boid>& flock, std::vector<Stats>& vec,
                   int& elapsed, sf::RenderWindow& window);
 void printStats(const std::vector<Stats>& vec);
 int askTxt();
 void exportStats(const std::vector<Stats>& vec);
 void exportPlot(const std::vector<Stats>& vec);
 int askPng();
-void plotStats(const std::vector<Stats>& stats, int conditional, const std::string& name);
+void plotStats(const std::vector<Stats>& stats, int conditional,
+               const std::string& name);
 #endif

@@ -1,6 +1,5 @@
 #include "Boids.hpp"
 
-
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -9,31 +8,32 @@
 #include <iostream>
 #include <numeric>
 #include <sstream>
-#include <sstream>
 #include <vector>
 // non so dove vanno definite le variabili
 const float Pi = 3.14159265358979323846264f;
 
 // funzione che fa in modo che i boid evitino i bordi della finestra sfml
-void Boid::avoid_edges(const int width, const int height) {  auto epsilon = std::numeric_limits<
+void Boid::avoid_edges(const int width, const int height) {
+  float repulsive_range = 100.f;
+  auto epsilon = std::numeric_limits<
       float>::epsilon();  // division and moltiplication by zero can lead to NaN
                           // errors hence the need for small epsilons
 
-  if (position.x < 80) {
+  if (position.x < repulsive_range) {
     velocity.x += (velocity.norm() + epsilon) * (1) *
-                  (1 / (std::pow((width - position.x), 0.25f) + epsilon));
+                  (1 / (std::pow((position.x), 0.25f) + epsilon));
   }
-  if (position.y < 80) {
+  if (position.y < repulsive_range) {
     velocity.y += (velocity.norm() + epsilon) * (1) *
-                  (1 / (std::pow((width - position.y), 0.25f) + epsilon));
+                  (1 / (std::pow((position.y), 0.25f) + epsilon));
   }
-  if (position.x > (width - 80)) {
+  if (position.x > (width - repulsive_range)) {
     velocity.x += (velocity.norm() + epsilon) * (-1) *
                   (1 / (std::pow((width - position.x), 0.25f) + epsilon));
   }
-  if (position.y > (height - 80)) {
-    velocity.y +=
-        (velocity.norm()+epsilon) * (-1) * (1 / (std::pow((height - position.y), 0.25f)+epsilon));
+  if (position.y > (height - repulsive_range)) {
+    velocity.y += (velocity.norm() + epsilon) * (-1) *
+                  (1 / (std::pow((height - position.y), 0.25f) + epsilon));
   };
 
   if (std::isnan(velocity.x) || std::isnan(velocity.y)) {
@@ -124,12 +124,12 @@ void Boid::setPosition(const Vec_2d& pos) { position = pos; }
 void Boid::setVelocity(const Vec_2d& vel) { velocity = vel; }
 
 void Boid::update(const Params& params, const std::vector<Boid>& flock,
-                  const float& max_speed, const sf::RenderWindow& window) {
+                  const float& max_speed, const int width, const int height) {
   velocity +=
       alignment_and_cohesion(flock, params.alig, params.cohes, params.dist) +
       separation(flock, params.sep, params.dist_sep);
-  const int width = window.getSize().x;
-  const int height = window.getSize().y;
+  // const int width = window.getSize().x;
+  // const int height = window.getSize().y;
 
   avoid_edges(width, height);
   limit(max_speed);
@@ -137,7 +137,7 @@ void Boid::update(const Params& params, const std::vector<Boid>& flock,
 }  // questa funzione aggiorna la velocità del boid e poi lo sposta
 
 void Boid::draw_on(sf::RenderWindow& window) const {
-  sf::CircleShape shape(4, 3);  // definisce la forma da disegnare
+  sf::CircleShape shape(5, 3);  // definisce la forma da disegnare
   shape.setPosition((position.x), (position.y));
   shape.setFillColor(sf::Color::White);
   float angle = (std::atan2(velocity.y, velocity.x) * 180 / (Pi));
@@ -147,6 +147,8 @@ void Boid::draw_on(sf::RenderWindow& window) const {
 
 void simulation(sf::RenderWindow& window, std::vector<Boid>& flock,
                 Params& params, const float& max_speed) {
+  const int width = static_cast<int>(sf::VideoMode::getDesktopMode().width);
+  const int height = static_cast<int>(sf::VideoMode::getDesktopMode().height);
   while (window.isOpen()) {
     sf::Event event;
 
@@ -158,8 +160,8 @@ void simulation(sf::RenderWindow& window, std::vector<Boid>& flock,
     window.clear();  // pulisce la finestra ogni frame
 
     for (auto& boid : flock) {
-      boid.update(params, flock,
-                  max_speed, window);  // funzione che limita la velocità
+      boid.update(params, flock, max_speed, width,
+                  height);  // funzione che limita la velocità
 
       boid.draw_on(window);
 
@@ -185,46 +187,48 @@ Stats statistics(
   float n = static_cast<float>(flock.size());  // dimensioni dello stormo
 
   // Vec_2d sum = {0.f , 0.f} ;
-  Vec_2d v_mean = std::accumulate(flock.begin(), flock.end(), Vec_2d(0.f, 0.f),
-                                  [&n](Vec_2d sum, const Boid& boid) {
-                                    return sum += (boid.getVelocity() / n);
-                                  });  // calcolo della velocità media
+  Vec_2d v_mean_val =
+      std::accumulate(flock.begin(), flock.end(), Vec_2d(0.f, 0.f),
+                      [&n](Vec_2d sum, const Boid& boid) {
+                        return sum += (boid.getVelocity() / n);
+                      });  // calcolo della velocità media
 
   // Vec_2d sum_d = {0.f , 0.f} ;
-  Vec_2d d_mean = std::accumulate(
-      flock.begin(), flock.end(), Vec_2d(0.f, 0.f),
-      [&flock, &n](Vec_2d sum, const Boid& boid_i) {
+  float d_mean_val = std::accumulate(
+      flock.begin(), flock.end(), 0.f,
+      [&flock, &n](float sum, const Boid& boid_i) {
         float d_mean_i = std::accumulate(
             flock.begin(), flock.end(), 0.f,
             [&boid_i, &n](float sum_d, const Boid& boid_j) {
               return sum_d += (boid_i.abs_distance_from(boid_j) / (n - 1));
             });
-        return sum += Vec_2d(d_mean_i, d_mean_i) / n;
-      });  // calcolo della distanza media tra due boid, utilizza un nested
-           // algorithm non so se è una cosa positiva.
+        return sum += (d_mean_i / n);
+      });  // calcolo della distanza media tra i boid dello stormo, utilizza un
+           // nested algorithm non so se è una cosa positiva.
 
-  stats.v_mean = v_mean.norm();
-  stats.d_mean = d_mean.norm();
+  stats.v_mean = v_mean_val.norm();
+  stats.d_mean = d_mean_val;
   stats.sigma_v = std::accumulate(
       flock.begin(), flock.end(), 0.f,
-      [&v_mean, &n](float sum, const Boid& boid) {
+      [&v_mean_val, &n](float sum, const Boid& boid) {
         return sum +=
-               std::pow(boid.getVelocity().norm() - v_mean.norm(), 2.f) / n;
+               std::pow(boid.getVelocity().norm() - v_mean_val.norm(), 2.f) / n;
       });
 
   stats.sigma_d = std::accumulate(
       flock.begin(), flock.end(), 0.f,
-      [&flock, &d_mean, &n](float sum, const Boid& boid_i) {
+      [&flock, &d_mean_val, &n](float sum, const Boid& boid_i) {
         float d_sigma_i = std::accumulate(
             flock.begin(), flock.end(), 0.f,
-            [&d_mean, &boid_i, &n](float sum_d, const Boid& boid_j) {
+            [&d_mean_val, &boid_i, &n](float sum_d, const Boid& boid_j) {
               return sum_d +=
-                     std::pow(boid_i.abs_distance_from(boid_j) - d_mean.norm(),
+                     std::pow(boid_i.abs_distance_from(boid_j) - d_mean_val,
                               2.f) /
                      (n - 1);
             });
         return sum += d_sigma_i / n;
       });
+
   return stats;
 }  // funzione che restituisce le statistiches
 
@@ -271,9 +275,10 @@ void printStats(const std::vector<Stats>& vec) {
 void instantiateStatsFile(std::string& file, const std::vector<Stats> vec) {
   std::ofstream file_output(file);
   if (!file_output) {
-    std::cout << "There was an error in the creation of the file";
+    std::cout << "There was an error in the creation of the file \n";
   };
-  file_output << "Time\tMean Distance\tDistance std\tMean Speed\tSpeed std\n";
+  // file_output << "Time\tMean Distance\tDistance std\tMean Speed\tSpeed
+  // std\n";
 
   for (size_t i; i < vec.size(); i++) {
     file_output << vec[i].time << "\t";
@@ -284,14 +289,12 @@ void instantiateStatsFile(std::string& file, const std::vector<Stats> vec) {
     file_output << '\n';
   }
   file_output.close();
-  std::cout << "The stats were successfully exported and saved in the file "
-            << file;
 }
 
 std::string namingFile() {  // ha lo scopo di ricevere il nome inserito e
                             // restituirlo alla funzione caller
   std::string file_name{};
-  std::cout << "Insert the name of the  file:";
+  std::cout << "Insert the name of the  file: ";
   std::cin >> file_name;
   return file_name;
 }
@@ -407,6 +410,6 @@ void plotStats(const std::vector<Stats>& stats, int conditional,
       std::cout << "Plot saved to " << name << std::endl;
     }
   } else {
-    std::cerr << "Error: Could not open pipe to Gnuplot." << std::endl;
+    std::cerr << "Error: Could not open pipe to Gnuplot. \n" << std::endl;
   }
 }

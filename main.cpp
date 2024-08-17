@@ -4,36 +4,30 @@
 
 #include "Boids.hpp"
 
-const int width = sf::VideoMode::getDesktopMode().width;
-const int height = sf::VideoMode::getDesktopMode().height;
-// sono ridefinite che è una cosa molto stupida
-// sono ridefinite che è una cosa molto stupida
-
 const float max_speed = 8;
 
 int main() {
+  const unsigned int width = sf::VideoMode::getDesktopMode().width;
+  const unsigned int height = sf::VideoMode::getDesktopMode().height;
   sf::RenderWindow window(sf::VideoMode(width, height),
                           "Boids Simulation");  // crea la finestra
-  // window.setFramerateLimit(1000);                // numero di fps
+  window.setPosition({0, 0});
   std::random_device rd;
   std::default_random_engine generator(rd());
   std::uniform_real_distribution<float> velocity_distribution(-4.0f, 4.0f);
 
-  Params params{0.3, 0.8, 0.3, 45,
-                20};  // parametri totalmente a caso, sono quasi sicuramente
-                      // responsabili dello strano comportamento
+  Params params{0.3f, 0.8f, 0.3f, 45.f,
+                20.f};  // parametri totalmente a caso, sono quasi sicuramente
+                        // responsabili dello strano comportamento
 
-  int frequency = 1000;  // millisecondi tra un'acquisizione e l'altra, ho messo
-                         // 1 per non eccedere il tempo massimo di godbolt
-  int flock_size = 300;
+  int frequency = 1000;  // millisecondi tra un'acquisizione e l'altra
+  int flock_size = 600;
   std::vector<Boid> flock;
-  sf::Clock clock;
-  float time_count{};
   for (int i = 0; i < flock_size; ++i) {
     Boid boid(
-        {static_cast<float>(std::rand() % width),
-         static_cast<float>(std::rand() % height)},
-    
+        {static_cast<float>(std::rand() % static_cast<int>(width)),
+         static_cast<float>(std::rand() % static_cast<int>(height))},
+
         {velocity_distribution(generator), velocity_distribution(generator)});
 
     flock.push_back(boid);
@@ -47,7 +41,7 @@ int main() {
   simulation(window, flock, params, max_speed);
 
   first.join();  // chiediamo all'utente se vuole stampare
-  exportStats(timestamped_stats);  
+  exportStats(timestamped_stats);
   exportPlot(timestamped_stats);
   std::cout << "The simulation is complete! \n";
 
