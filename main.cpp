@@ -7,6 +7,7 @@
 const int width = sf::VideoMode::getDesktopMode().width;
 const int height = sf::VideoMode::getDesktopMode().height;
 // sono ridefinite che è una cosa molto stupida
+// sono ridefinite che è una cosa molto stupida
 
 const float max_speed = 8;
 
@@ -26,10 +27,13 @@ int main() {
                          // 1 per non eccedere il tempo massimo di godbolt
   int flock_size = 300;
   std::vector<Boid> flock;
+  sf::Clock clock;
+  float time_count{};
   for (int i = 0; i < flock_size; ++i) {
     Boid boid(
         {static_cast<float>(std::rand() % width),
          static_cast<float>(std::rand() % height)},
+    
         {velocity_distribution(generator), velocity_distribution(generator)});
 
     flock.push_back(boid);

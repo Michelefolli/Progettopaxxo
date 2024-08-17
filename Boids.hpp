@@ -2,8 +2,11 @@
 #define BOIDS_HPP
 #include <SFML/Graphics.hpp>
 #include <chrono>
+#include <chrono>
 #include <cmath>
 #include <iostream>
+#include <sstream>
+#include <thread>
 #include <vector>
 
 struct Vec_2d {
@@ -41,10 +44,12 @@ class Boid {
   const Vec_2d separation(const std::vector<Boid>& flock, const float& sep,
                           const float& dist_sep)
       const;  // calcola il vettore velocità di separazione
+
   const Vec_2d alignment_and_cohesion(const std::vector<Boid>& flock,
                                       const float& alig, const float& cohes,
                                       const float& dist)
       const;  // calcola il vettore velocità di separazione e coesione
+  void avoid_edges(const int width, const int height);
 
  public:
   float abs_distance_from(
@@ -54,11 +59,14 @@ class Boid {
   const Vec_2d& getPosition() const;
   const Vec_2d& getVelocity() const;
   void setPosition(const Vec_2d& pos);
+  const Vec_2d& getVelocity() const;
+  void setPosition(const Vec_2d& pos);
   void setVelocity(const Vec_2d& vel);
-  void update(
-      const Params& params, const std::vector<Boid>& flock,
-      const float& max_speed);  // aggiunge i modificatori di velocità, limita
-                                // la velocità e poi sposta il boid
+  void update(const Params& params, const std::vector<Boid>& flock,
+              const float& max_speed,
+              const sf::RenderWindow&
+                  window);  // aggiunge i modificatori di velocità, limita
+                            // la velocità e poi sposta il boid
   void draw_on(
       sf::RenderWindow& window) const;  // disegna il boid sulla finestra sfml
 };

@@ -1,5 +1,6 @@
 #include "Boids.hpp"
 
+
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -8,17 +9,13 @@
 #include <iostream>
 #include <numeric>
 #include <sstream>
+#include <sstream>
 #include <vector>
 // non so dove vanno definite le variabili
 const float Pi = 3.14159265358979323846264f;
-const int width = 1920;
-const int height = 1080;
 
 // funzione che fa in modo che i boid evitino i bordi della finestra sfml
-void repulsive_border(Boid& boid) {
-  auto position = boid.getPosition();
-  auto velocity = boid.getVelocity();
-  auto epsilon = std::numeric_limits<
+void Boid::avoid_edges(const int width, const int height) {  auto epsilon = std::numeric_limits<
       float>::epsilon();  // division and moltiplication by zero can lead to NaN
                           // errors hence the need for small epsilons
 
@@ -35,8 +32,8 @@ void repulsive_border(Boid& boid) {
                   (1 / (std::pow((width - position.x), 0.25f) + epsilon));
   }
   if (position.y > (height - 80)) {
-    velocity.y += (velocity.norm() + epsilon) * (-1) *
-                  (1 / (std::pow((width - position.y), 0.25f) + epsilon));
+    velocity.y +=
+        (velocity.norm()+epsilon) * (-1) * (1 / (std::pow((height - position.y), 0.25f)+epsilon));
   };
 
   if (std::isnan(velocity.x) || std::isnan(velocity.y)) {
@@ -56,7 +53,7 @@ void repulsive_border(Boid& boid) {
   } else {
     std::cout << "position is infinite \n";
   };
-  boid.setVelocity(velocity);
+
 }  // la potenza deve essere di ordine pari in modo da recuperare i boid che per
    // sbagli0 finiscono fuori schermo
 
@@ -74,16 +71,14 @@ float Boid::abs_distance_from(const Boid& boid_j) const {
 
 const Vec_2d Boid::separation(const std::vector<Boid>& flock, const float& sep,
                               const float& dist_sep) const {
-  std::vector<Boid> subvector;
-  std::copy_if(
-      flock.begin(), flock.end(), std::back_inserter(subvector),
-      [&dist_sep, this](const Boid& other_boid) {
-        return abs_distance_from(other_boid) < dist_sep;
-      });  // ora il vettore subvector contiene tutti i boid a distanza d_s_
   Vec_2d v_sep =
-      std::accumulate(subvector.begin(), subvector.end(), Vec_2d(0., 0.),
-                      [this](Vec_2d sum, const Boid& other_boid) {
-                        return sum += (other_boid.position - position);
+      std::accumulate(flock.begin(), flock.end(), Vec_2d(0., 0.),
+                      [this, &dist_sep](Vec_2d sum, const Boid& other_boid) {
+                        if (abs_distance_from(other_boid) <= dist_sep) {
+                          Vec_2d diff = other_boid.getPosition() - position;
+                          sum += diff;
+                        }
+                        return sum;
                       }) *
       (-sep);
 
@@ -93,35 +88,33 @@ const Vec_2d Boid::separation(const std::vector<Boid>& flock, const float& sep,
 const Vec_2d Boid::alignment_and_cohesion(const std::vector<Boid>& flock,
                                           const float& alig, const float& cohes,
                                           const float& dist) const {
-  std::vector<Boid> subvector;
-  std::copy_if(
-      flock.begin(), flock.end(), std::back_inserter(subvector),
-      [this, &dist](const Boid& other_boid) {
-        return abs_distance_from(other_boid) < dist;
-      });  // ora il vettore subvector contiene tutti i boid a distanza d_s_
-  float n = static_cast<float>(subvector.size());
-  if (n > 1) {  // evita la divisione per 0
-    Vec_2d subboids_velocity_sum =
-        std::accumulate(subvector.begin(), subvector.end(), Vec_2d(0., 0.),
-                        [](Vec_2d sum, const Boid& other_boid) {
-                          return sum += other_boid.velocity;
-                        }) -
-        velocity;
-    Vec_2d v_alignment = (subboids_velocity_sum / (n - 1) - velocity) * alig;
-    // calcolo della velocità di allineamento
-    Vec_2d center_of_mass =
-        std::accumulate(subvector.begin(), subvector.end(), Vec_2d(0., 0.),
-                        [&n](Vec_2d sum, const Boid& boid_j) {
-                          return sum += (boid_j.position / (n - 1));
-                        }) -
-        position / (n - 1);  // calcolo del centro di massa del subvector. Il
-                             // subvector contiene anche il boid di riferimento,
-                             // quindi dopo la sommatoria glielo togliamo
-    Vec_2d v_cohesion = (center_of_mass - position) * cohes;
+  int count = 0;
 
-    return (v_alignment + v_cohesion);
+  std::pair<Vec_2d, Vec_2d> sums =
+      std::accumulate(  // sommatoria per posizioni e velocità
+          flock.begin(), flock.end(),
+          std::make_pair(Vec_2d(0.f, 0.f), Vec_2d(0.f, 0.f)),
+          [this, dist, &count](std::pair<Vec_2d, Vec_2d> acc,
+                               const Boid& otherBoid) {
+            if (this != &otherBoid &&
+                this->abs_distance_from(otherBoid) <= dist) {
+              acc.first += otherBoid.velocity;   // somma delle velocità
+              acc.second += otherBoid.position;  // Somma delle posizioni
+              ++count;
+            }
+            return acc;
+          });
+
+  if (count > 0) {
+    Vec_2d avg_velocity = sums.first / static_cast<float>(count);
+    Vec_2d center_of_mass = sums.second / static_cast<float>(count);
+
+    Vec_2d v_alig = (avg_velocity - velocity) * alig;
+    Vec_2d v_cohes = (center_of_mass - position) * cohes;
+
+    return v_alig + v_cohes;
   } else
-    return {0, 0};
+    return Vec_2d(0, 0);
 };
 
 // getters and setters:
@@ -131,11 +124,14 @@ void Boid::setPosition(const Vec_2d& pos) { position = pos; }
 void Boid::setVelocity(const Vec_2d& vel) { velocity = vel; }
 
 void Boid::update(const Params& params, const std::vector<Boid>& flock,
-                  const float& max_speed) {
+                  const float& max_speed, const sf::RenderWindow& window) {
   velocity +=
       alignment_and_cohesion(flock, params.alig, params.cohes, params.dist) +
       separation(flock, params.sep, params.dist_sep);
-  repulsive_border(*this);
+  const int width = window.getSize().x;
+  const int height = window.getSize().y;
+
+  avoid_edges(width, height);
   limit(max_speed);
   position += velocity;
 }  // questa funzione aggiorna la velocità del boid e poi lo sposta
@@ -163,7 +159,7 @@ void simulation(sf::RenderWindow& window, std::vector<Boid>& flock,
 
     for (auto& boid : flock) {
       boid.update(params, flock,
-                  max_speed);  // funzione che limita la velocità
+                  max_speed, window);  // funzione che limita la velocità
 
       boid.draw_on(window);
 
@@ -229,7 +225,6 @@ Stats statistics(
             });
         return sum += d_sigma_i / n;
       });
-
   return stats;
 }  // funzione che restituisce le statistiches
 
