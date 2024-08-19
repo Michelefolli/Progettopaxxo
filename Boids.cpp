@@ -6,10 +6,10 @@
 #include <cstdio>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 #include <numeric>
 #include <sstream>
 #include <vector>
-#include<mutex>
 
 // non so dove vanno definite le variabili
 const float Pi = 3.14159265358979323846264f;
@@ -17,27 +17,27 @@ const float Pi = 3.14159265358979323846264f;
 // funzione che fa in modo che i boid evitino i bordi della finestra sfml
 void Boid::avoid_edges(const int width, const int height) {
   float repulsive_range = 100.f;
+  auto distance_from_border = velocity.norm();
   auto epsilon = std::numeric_limits<
       float>::epsilon();  // division and moltiplication by zero can lead to NaN
                           // errors hence the need for small epsilons
 
   if (position.x < repulsive_range) {
-    velocity.x += (velocity.norm() + epsilon) * (1) *
+    velocity.x += (distance_from_border + epsilon) * (1) *
                   (1 / (std::pow((position.x), 0.25f) + epsilon));
   }
   if (position.y < repulsive_range) {
-    velocity.y += (velocity.norm() + epsilon) * (1) *
+    velocity.y += (distance_from_border + epsilon) * (1) *
                   (1 / (std::pow((position.y), 0.25f) + epsilon));
   }
   if (position.x > (width - repulsive_range)) {
-    velocity.x += (velocity.norm() + epsilon) * (-1) *
+    velocity.x += (distance_from_border + epsilon) * (-1) *
                   (1 / (std::pow((width - position.x), 0.25f) + epsilon));
   }
   if (position.y > (height - repulsive_range)) {
-    velocity.y += (velocity.norm() + epsilon) * (-1) *
+    velocity.y += (distance_from_border + epsilon) * (-1) *
                   (1 / (std::pow((height - position.y), 0.25f) + epsilon));
   };
-
   if (std::isnan(velocity.x) || std::isnan(velocity.y)) {
     std::cout << "Velocity is nan \n";
   };
@@ -148,7 +148,8 @@ void Boid::draw_on(sf::RenderWindow& window) const {
 }  // disegna il boid come un triangolo orientato nella direzione di volo
 
 void simulation(sf::RenderWindow& window, std::vector<Boid>& flock,
-                Params& params, const float& max_speed, std::vector<Boid>& read, std::mutex& synchro) {
+                Params& params, const float& max_speed, std::vector<Boid>& read,
+                std::mutex& synchro) {
   const int width = static_cast<int>(sf::VideoMode::getDesktopMode().width);
   const int height = static_cast<int>(sf::VideoMode::getDesktopMode().height);
   while (window.isOpen()) {
@@ -168,9 +169,9 @@ void simulation(sf::RenderWindow& window, std::vector<Boid>& flock,
       boid.draw_on(window);
 
     }  // disegna tutti i boid, ma non li fa vedere ancora, quello è display
-    synchro.lock();
-    read = flock ;
-    synchro.unlock();
+   synchro.lock();
+    read = flock;
+   synchro.unlock();
     window.display();
   }
 }
@@ -212,14 +213,17 @@ Stats statistics(
 
   stats.v_mean = v_mean_val.norm();
   stats.d_mean = d_mean_val;
-  stats.sigma_v = std::accumulate(
+  auto sigma_v_val = std::accumulate(
       flock.begin(), flock.end(), 0.f,
       [&v_mean_val, &n](float sum, const Boid& boid) {
         return sum +=
-               std::pow(boid.getVelocity().norm() - v_mean_val.norm(), 2.f) / n;
+               std::pow(boid.getVelocity().norm() - v_mean_val.norm(), 2.f) /
+               (n - 1);
       });
 
-  stats.sigma_d = std::accumulate(
+  stats.sigma_v = std::sqrt(sigma_v_val);
+
+  auto sigma_d_val = std::accumulate(
       flock.begin(), flock.end(), 0.f,
       [&flock, &d_mean_val, &n](float sum, const Boid& boid_i) {
         float d_sigma_i = std::accumulate(
@@ -228,13 +232,16 @@ Stats statistics(
               return sum_d +=
                      std::pow(boid_i.abs_distance_from(boid_j) - d_mean_val,
                               2.f) /
-                     (n - 1);
+                     (n - 2);
             });
         return sum += d_sigma_i / n;
       });
+  stats.sigma_d =
+      std::sqrt(sigma_d_val - ((std::pow(d_mean_val, 2.f) / n - 2)));
 
   return stats;
-}  // funzione che restituisce le statistiches
+}
+// funzione che restituisce le statistiches
 
 void fillStatsVector(const std::vector<Boid>& flock, std::vector<Stats>& vec,
                      const std::chrono::time_point<std::chrono::steady_clock>&
@@ -245,24 +252,23 @@ void fillStatsVector(const std::vector<Boid>& flock, std::vector<Stats>& vec,
   vec.push_back(statistics(flock, start_time));
 }
 
-void update_Stats(
-    const std::vector<Boid>& flock, std::vector<Stats>& timestamped_stats,
-    int& elapsed,
-    sf::RenderWindow& window, std::mutex& synchro ) {  // funzione che riassume il processo
-                                 // di acquisizione periodica delle statistiche
+void update_Stats(const std::vector<Boid>& flock,
+                  std::vector<Stats>& timestamped_stats, int& elapsed,
+                  sf::RenderWindow& window,
+                  std::mutex& synchro) {  // funzione che riassume il processo
+  // di acquisizione periodica delle statistiche
   auto start_time = std::chrono::steady_clock::now();
   auto last_update_time = start_time;
   while (window.isOpen()) {  // questo if era per controllare che compilasse,
                              // diventerà un while(window.isOpen)
-    
+
     auto current_time = std::chrono::steady_clock::now();
     if (current_time - last_update_time >= std::chrono::milliseconds(elapsed)) {
-      synchro.lock() ;
+      synchro.lock();
       fillStatsVector(flock, timestamped_stats, start_time);
       last_update_time = current_time;
       synchro.unlock();
     }
-    
   }
 }
 

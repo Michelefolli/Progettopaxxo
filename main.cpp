@@ -9,6 +9,7 @@ const float max_speed = 8;
 int main() {
   const unsigned int width = sf::VideoMode::getDesktopMode().width;
   const unsigned int height = sf::VideoMode::getDesktopMode().height;
+ 
   sf::RenderWindow window(sf::VideoMode(width, height),
                           "Boids Simulation");  // crea la finestra
   window.setPosition({0, 0});
@@ -21,7 +22,7 @@ int main() {
                         // responsabili dello strano comportamento
 
   int frequency = 1000;  // millisecondi tra un'acquisizione e l'altra
-  int flock_size = 600;
+  int flock_size = 300;
   std::vector<Boid> flock;
   for (int i = 0; i < flock_size; ++i) {
     Boid boid(
@@ -40,10 +41,11 @@ int main() {
                     std::ref(frequency), std::ref(window), std::ref(mtx));
 
   simulation(window, flock, params, max_speed, reading_flock, mtx);
-
+  
   first.join();  // chiediamo all'utente se vuole stampare
   exportStats(timestamped_stats);
   exportPlot(timestamped_stats);
+  
   std::cout << "The simulation is complete! \n";
 
   return 0;
