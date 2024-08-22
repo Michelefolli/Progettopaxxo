@@ -5,17 +5,30 @@
 #include <cmath>
 #include <cstdio>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <mutex>
 #include <numeric>
+#include <random>
 #include <sstream>
 #include <vector>
 
 // non so dove vanno definite le variabili
-const float Pi = 3.14159265358979323846264f;
+// const float Pi = 3.14159265358979323846264f;
+
+void inputData(int& size, int& period, Params& parameters) {
+  std::cout << "Input the required data \n";
+  std::cout << "Number of Boids: ";
+  std::cin >> size;
+  std::cout << "Stats' period of acquisition: ";
+  std::cin >> period;
+  std::cout << "Simulation parameters: ";
+  std::cin >> parameters.sep >> parameters.alig >> parameters.cohes >>
+      parameters.dist >> parameters.dist_sep;
+}
 
 // funzione che fa in modo che i boid evitino i bordi della finestra sfml
-void Boid::avoid_edges(const int width, const int height) {
+void Boid::avoid_edges(const float width, const float height) {  // debug mode
   float repulsive_range = 100.f;
   auto distance_from_border = velocity.norm();
   auto epsilon = std::numeric_limits<
@@ -23,28 +36,61 @@ void Boid::avoid_edges(const int width, const int height) {
                           // errors hence the need for small epsilons
 
   if (position.x < repulsive_range) {
+    auto crr_x = (distance_from_border + epsilon) * (1) *                    //
+                 (1 / (std::pow((std::abs(position.x)), 0.25f) + epsilon));  //
+    if (std::isnan(crr_x)) {                                                 //
+      std::cout << "crr_l_x is nan: " << velocity.norm() << " "
+                << position.x  //
+                << '\n';       //
+    }
     velocity.x += (distance_from_border + epsilon) * (1) *
-                  (1 / (std::pow((position.x), 0.25f) + epsilon));
+                  (1 / (std::pow((std::abs(position.x)), 0.25f) + epsilon));
   }
   if (position.y < repulsive_range) {
+    auto crr_y = (distance_from_border + epsilon) * (1) *                    //
+                 (1 / (std::pow((std::abs(position.y)), 0.25f) + epsilon));  //
+    if (std::isnan(crr_y)) {                                                 //
+      std::cout << "crr_b_y is nan: " << velocity.norm() << " "
+                << position.y  //
+                << '\n';       //
+    }
     velocity.y += (distance_from_border + epsilon) * (1) *
-                  (1 / (std::pow((position.y), 0.25f) + epsilon));
+                  (1 / (std::pow((std::abs(position.y)), 0.25f) + epsilon));
   }
   if (position.x > (width - repulsive_range)) {
-    velocity.x += (distance_from_border + epsilon) * (-1) *
-                  (1 / (std::pow((width - position.x), 0.25f) + epsilon));
+    auto crr_x =                                                            //
+        (distance_from_border + epsilon) * (-1) *                           //
+        (1 / (std::pow((std::abs(width - position.x)), 0.25f) + epsilon));  //
+    if (std::isnan(crr_x)) {                                                //
+      std::cout << "crr_r_x is nan: " << velocity.norm() << " "
+                << position.x  //
+                << '\n';       //
+    }
+    velocity.x +=
+        (distance_from_border + epsilon) * (-1) *
+        (1 / (std::pow((std::abs(width - position.x)), 0.25f) + epsilon));
   }
   if (position.y > (height - repulsive_range)) {
-    velocity.y += (distance_from_border + epsilon) * (-1) *
-                  (1 / (std::pow((height - position.y), 0.25f) + epsilon));
+    auto crr_y =                                                             //
+        (distance_from_border + epsilon) * (-1) *                            //
+        (1 / (std::pow((std::abs(height - position.y)), 0.25f) + epsilon));  //
+    if (std::isnan(crr_y)) {                                                 //
+      std::cout << "crr_t_y is nan: " << velocity.norm() << " "
+                << position.y  //
+                << '\n';       //
+    }  //
+    velocity.y +=
+        (distance_from_border + epsilon) * (-1) *
+        (1 / (std::pow((std::abs(height - position.y)), 0.25f) + epsilon));
   };
-  if (std::isnan(velocity.x) || std::isnan(velocity.y)) {
-    std::cout << "Velocity is nan \n";
-  };
-  if (std::isnan(position.x) || std::isnan(position.y)) {
-    std::cout << "Position is NaN \n ";
-  };
-
+  /*
+    if (std::isnan(velocity.x) || std::isnan(velocity.y)) {
+      std::cout << "Velocity is nan \n";
+    };
+    if (std::isnan(position.x) || std::isnan(position.y)) {
+      std::cout << "Position is NaN \n";
+    };
+ */
   if (std::isfinite(velocity.x) || std::isfinite(velocity.y)) {
     ;
   } else {
@@ -60,46 +106,46 @@ void Boid::avoid_edges(const int width, const int height) {
    // sbagli0 finiscono fuori schermo
 
 // funzione che limita la velocità:
-void Boid::limit(const float& max_speed) {
-  float norm = velocity.norm();
-  if (norm > max_speed) {
-    velocity = velocity * (max_speed / norm);
-  }
+void Boid::limit(const float max_speed) {
+  //float norm = velocity.norm();
+  velocity = velocity * (max_speed / velocity.norm());
 }
 
 float Boid::abs_distance_from(const Boid& boid_j) const {
   return (position - boid_j.position).norm();
 };  // modulo della distanza tra due boid
 
-const Vec_2d Boid::separation(const std::vector<Boid>& flock, const float& sep,
-                              const float& dist_sep) const {
+const Vec_2d Boid::separation(const std::vector<Boid>& flock,
+                              const Params& params) const {
   Vec_2d v_sep =
       std::accumulate(flock.begin(), flock.end(), Vec_2d(0., 0.),
-                      [this, &dist_sep](Vec_2d sum, const Boid& other_boid) {
-                        if (abs_distance_from(other_boid) <= dist_sep) {
+                      [this, &params](Vec_2d sum, const Boid& other_boid) {
+                        if (abs_distance_from(other_boid) <= params.dist_sep) {
                           Vec_2d diff = other_boid.getPosition() - position;
                           sum += diff;
                         }
                         return sum;
                       }) *
-      (-sep);
+      (-params.sep);
+  if (std::isnan(v_sep.x) || std::isnan(v_sep.y)) {
+    std::cout << "V_sep is nan";
+  }
 
   return v_sep;
 };  // calcolo della velocità di separazione. Questa è testata e funziona
 
 const Vec_2d Boid::alignment_and_cohesion(const std::vector<Boid>& flock,
-                                          const float& alig, const float& cohes,
-                                          const float& dist) const {
+                                          const Params& params) const {
   int count = 0;
 
   std::pair<Vec_2d, Vec_2d> sums =
       std::accumulate(  // sommatoria per posizioni e velocità
           flock.begin(), flock.end(),
           std::make_pair(Vec_2d(0.f, 0.f), Vec_2d(0.f, 0.f)),
-          [this, dist, &count](std::pair<Vec_2d, Vec_2d> acc,
-                               const Boid& otherBoid) {
+          [this, &params, &count](std::pair<Vec_2d, Vec_2d> acc,
+                                  const Boid& otherBoid) {
             if (this != &otherBoid &&
-                this->abs_distance_from(otherBoid) <= dist) {
+                this->abs_distance_from(otherBoid) <= params.dist) {
               acc.first += otherBoid.velocity;   // somma delle velocità
               acc.second += otherBoid.position;  // Somma delle posizioni
               ++count;
@@ -111,9 +157,15 @@ const Vec_2d Boid::alignment_and_cohesion(const std::vector<Boid>& flock,
     Vec_2d avg_velocity = sums.first / static_cast<float>(count);
     Vec_2d center_of_mass = sums.second / static_cast<float>(count);
 
-    Vec_2d v_alig = (avg_velocity - velocity) * alig;
-    Vec_2d v_cohes = (center_of_mass - position) * cohes;
+    Vec_2d v_alig = (avg_velocity - velocity) * params.alig;
+    Vec_2d v_cohes = (center_of_mass - position) * params.cohes;
 
+    if (std::isnan(v_alig.x) || std::isnan(v_alig.y)) {
+      std::cout << "V_alig is nan";
+    }
+    if (std::isnan(v_cohes.x) || std::isnan(v_cohes.y)) {
+      std::cout << "V_cohes is nan";
+    }
     return v_alig + v_cohes;
   } else
     return Vec_2d(0, 0);
@@ -126,15 +178,14 @@ void Boid::setPosition(const Vec_2d& pos) { position = pos; }
 void Boid::setVelocity(const Vec_2d& vel) { velocity = vel; }
 
 void Boid::update(const Params& params, const std::vector<Boid>& flock,
-                  const float& max_speed, const int width, const int height) {
-  velocity +=
-      alignment_and_cohesion(flock, params.alig, params.cohes, params.dist) +
-      separation(flock, params.sep, params.dist_sep);
-  // const int width = window.getSize().x;
-  // const int height = window.getSize().y;
+                  const float max_speed, const float width,
+                  const float height) {
+  velocity += alignment_and_cohesion(flock, params) + separation(flock, params);
 
   avoid_edges(width, height);
-  limit(max_speed);
+  if (velocity.norm() > max_speed) {
+    limit(max_speed);
+  }
   position += velocity;
 }  // questa funzione aggiorna la velocità del boid e poi lo sposta
 
@@ -142,16 +193,17 @@ void Boid::draw_on(sf::RenderWindow& window) const {
   sf::CircleShape shape(5, 3);  // definisce la forma da disegnare
   shape.setPosition((position.x), (position.y));
   shape.setFillColor(sf::Color::White);
-  float angle = (std::atan2(velocity.y, velocity.x) * 180 / (Pi));
-  shape.setRotation(angle);
+  // float angle = (std::atan2(velocity.y, velocity.x) * 180 / (Pi));
+  // shape.setRotation(angle);
   window.draw(shape);
 }  // disegna il boid come un triangolo orientato nella direzione di volo
 
 void simulation(sf::RenderWindow& window, std::vector<Boid>& flock,
-                Params& params, const float& max_speed, std::vector<Boid>& read,
+                Params& params, const float max_speed, std::vector<Boid>& read,
                 std::mutex& synchro) {
-  const int width = static_cast<int>(sf::VideoMode::getDesktopMode().width);
-  const int height = static_cast<int>(sf::VideoMode::getDesktopMode().height);
+  const float width = static_cast<float>(sf::VideoMode::getDesktopMode().width);
+  const float height =
+      static_cast<float>(sf::VideoMode::getDesktopMode().height);
   while (window.isOpen()) {
     sf::Event event;
 
@@ -167,11 +219,11 @@ void simulation(sf::RenderWindow& window, std::vector<Boid>& flock,
                   height);  // funzione che limita la velocità
 
       boid.draw_on(window);
-
-    }  // disegna tutti i boid, ma non li fa vedere ancora, quello è display
-   synchro.lock();
+    }
+    // disegna tutti i boid, ma non li fa vedere ancora, quello è display
+    synchro.lock();
     read = flock;
-   synchro.unlock();
+    synchro.unlock();
     window.display();
   }
 }
@@ -194,17 +246,17 @@ Stats statistics(
   // Vec_2d sum = {0.f , 0.f} ;
   Vec_2d v_mean_val =
       std::accumulate(flock.begin(), flock.end(), Vec_2d(0.f, 0.f),
-                      [&n](Vec_2d sum, const Boid& boid) {
+                      [n](Vec_2d sum, const Boid& boid) {
                         return sum += (boid.getVelocity() / n);
                       });  // calcolo della velocità media
 
   // Vec_2d sum_d = {0.f , 0.f} ;
   float d_mean_val = std::accumulate(
       flock.begin(), flock.end(), 0.f,
-      [&flock, &n](float sum, const Boid& boid_i) {
+      [&flock, n](float sum, const Boid& boid_i) {
         float d_mean_i = std::accumulate(
             flock.begin(), flock.end(), 0.f,
-            [&boid_i, &n](float sum_d, const Boid& boid_j) {
+            [&boid_i, n](float sum_d, const Boid& boid_j) {
               return sum_d += (boid_i.abs_distance_from(boid_j) / (n - 1));
             });
         return sum += (d_mean_i / n);
@@ -215,7 +267,7 @@ Stats statistics(
   stats.d_mean = d_mean_val;
   auto sigma_v_val = std::accumulate(
       flock.begin(), flock.end(), 0.f,
-      [&v_mean_val, &n](float sum, const Boid& boid) {
+      [&v_mean_val, n](float sum, const Boid& boid) {
         return sum +=
                std::pow(boid.getVelocity().norm() - v_mean_val.norm(), 2.f) /
                (n - 1);
@@ -225,10 +277,10 @@ Stats statistics(
 
   auto sigma_d_val = std::accumulate(
       flock.begin(), flock.end(), 0.f,
-      [&flock, &d_mean_val, &n](float sum, const Boid& boid_i) {
+      [&flock, &d_mean_val, n](float sum, const Boid& boid_i) {
         float d_sigma_i = std::accumulate(
             flock.begin(), flock.end(), 0.f,
-            [&d_mean_val, &boid_i, &n](float sum_d, const Boid& boid_j) {
+            [&d_mean_val, &boid_i, n](float sum_d, const Boid& boid_j) {
               return sum_d +=
                      std::pow(boid_i.abs_distance_from(boid_j) - d_mean_val,
                               2.f) /
@@ -253,22 +305,24 @@ void fillStatsVector(const std::vector<Boid>& flock, std::vector<Stats>& vec,
 }
 
 void update_Stats(const std::vector<Boid>& flock,
-                  std::vector<Stats>& timestamped_stats, int& elapsed,
+                  std::vector<Stats>& timestamped_stats, int elapsed,
                   sf::RenderWindow& window,
                   std::mutex& synchro) {  // funzione che riassume il processo
   // di acquisizione periodica delle statistiche
   auto start_time = std::chrono::steady_clock::now();
   auto last_update_time = start_time;
+  auto current_time = start_time;
   while (window.isOpen()) {  // questo if era per controllare che compilasse,
                              // diventerà un while(window.isOpen)
 
-    auto current_time = std::chrono::steady_clock::now();
+    current_time = std::chrono::steady_clock::now();
     if (current_time - last_update_time >= std::chrono::milliseconds(elapsed)) {
+      last_update_time = current_time;
       synchro.lock();
       fillStatsVector(flock, timestamped_stats, start_time);
-      last_update_time = current_time;
       synchro.unlock();
     }
+    // std::this_thread::sleep_for(std::chrono::milliseconds(elapsed));
   }
 }
 
@@ -277,15 +331,17 @@ void printStats(const std::vector<Stats>& vec) {
 
   // Use std::for_each to iterate over each element in the vector
   std::for_each(vec.begin(), vec.end(), [&output_str](const Stats& stat) {
-    output_str << stat.d_mean << "  " << stat.sigma_d << "  " << stat.v_mean
-               << "  " << stat.sigma_v << "  " << stat.time << "\n";
+    output_str << std::fixed << std::setprecision(1) << stat.d_mean << "  "
+               << stat.sigma_d << "  " << std::setprecision(3) << stat.v_mean
+               << "  " << stat.sigma_v << "  " << std::setprecision(2)
+               << stat.time << "\n";
   });
 
   // Print the accumulated string
   std::cout << output_str.str();
 }
 
-void instantiateStatsFile(std::string& file, const std::vector<Stats> vec) {
+void instantiateStatsFile(std::string& file, const std::vector<Stats>& vec) {
   std::ofstream file_output(file);
   if (!file_output) {
     std::cout << "There was an error in the creation of the file \n";
@@ -294,11 +350,11 @@ void instantiateStatsFile(std::string& file, const std::vector<Stats> vec) {
   // std\n";
 
   for (size_t i; i < vec.size(); i++) {
-    file_output << vec[i].time << "\t";
     file_output << vec[i].d_mean << "\t";
     file_output << vec[i].sigma_d << "\t";
     file_output << vec[i].v_mean << "\t";
     file_output << vec[i].sigma_v << "\t";
+    file_output << vec[i].time << "\t";
     file_output << '\n';
   }
   file_output.close();
@@ -419,7 +475,7 @@ void plotStats(const std::vector<Stats>& stats, int conditional,
     // Close the pipe to Gnuplot
     pclose(gnuplotPipe);
 
-    if (conditional) {
+    if (conditional == 1) {
       std::cout << "Plot saved to " << name << std::endl;
     }
   } else {

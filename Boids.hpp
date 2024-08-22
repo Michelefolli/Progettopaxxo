@@ -4,10 +4,10 @@
 #include <chrono>
 #include <cmath>
 #include <iostream>
+#include <mutex>
 #include <sstream>
 #include <thread>
 #include <vector>
-#include<mutex>
 
 struct Vec_2d {
   Vec_2d(float x_val, float y_val)
@@ -40,16 +40,14 @@ class Boid {
  private:
   Vec_2d position;
   Vec_2d velocity;
-  void limit(const float& max_speed);  // limite di velocità
-  const Vec_2d separation(const std::vector<Boid>& flock, const float& sep,
-                          const float& dist_sep)
+  void limit(const float max_speed);  // limite di velocità
+  const Vec_2d separation(const std::vector<Boid>& flock, const Params& params)
       const;  // calcola il vettore velocità di separazione
 
   const Vec_2d alignment_and_cohesion(const std::vector<Boid>& flock,
-                                      const float& alig, const float& cohes,
-                                      const float& dist)
+                                      const Params& params)
       const;  // calcola il vettore velocità di separazione e coesione
-  void avoid_edges(const int width, const int height);
+  void avoid_edges(const float width, const float height);
 
  public:
   float abs_distance_from(
@@ -61,9 +59,9 @@ class Boid {
   void setPosition(const Vec_2d& pos);
   void setVelocity(const Vec_2d& vel);
   void update(const Params& params, const std::vector<Boid>& flock,
-              const float& max_speed, const int width,
-              const int height);  // aggiunge i modificatori di velocità, limita
-                                  // la velocità e poi sposta il boid
+              const float max_speed, const float width,
+              const float height);  // aggiunge i modificatori di velocità,
+                                    // limita la velocità e poi sposta il boid
   void draw_on(
       sf::RenderWindow& window) const;  // disegna il boid sulla finestra sfml
 };
@@ -86,21 +84,22 @@ struct Stats {
 
 };  // struttura delle statistiche
 
+void inputData(int& size, int& period, Params& parameters);
 Stats statistics(const std::vector<Boid>& flock,
                  const std::chrono::time_point<std::chrono::steady_clock>&
                      start_time);  // calcola le statistiche dello stormo in un
                                    // determinato momento
 
 void simulation(sf::RenderWindow& window, std::vector<Boid>& flock,
-                Params& params, const float& max_speed, std::vector<Boid>& read,
+                Params& params, const float max_speed, std::vector<Boid>& read,
                 std::mutex& synchro);
-void pause_thread(int& time_leap);
 void fillStatsVector(
     const std::vector<Boid>& flock, std::vector<Stats>& vec,
     const std::chrono::time_point<std::chrono::steady_clock>& start_time);
 void update_Stats(const std::vector<Boid>& flock,
-                  std::vector<Stats>& timestamped_stats, int& elapsed,
+                  std::vector<Stats>& timestamped_stats, int elapsed,
                   sf::RenderWindow& window, std::mutex& synchro);
+void instantiateStatsFile(std::string& file, const std::vector<Stats>& vec);
 void printStats(const std::vector<Stats>& vec);
 int askTxt();
 void exportStats(const std::vector<Stats>& vec);
