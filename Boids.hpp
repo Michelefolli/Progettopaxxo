@@ -41,13 +41,14 @@ class Boid {
   Vec_2d position;
   Vec_2d velocity;
   void limit(const float max_speed);  // limite di velocità
-  const Vec_2d separation(const std::vector<Boid>& flock, const Params& params)
+  const Vec_2d separation(const std::vector<Boid>& flock,
+                          const Params& simulation_params)
       const;  // calcola il vettore velocità di separazione
 
   const Vec_2d alignment_and_cohesion(const std::vector<Boid>& flock,
-                                      const Params& params)
+                                      const Params& simulation_params)
       const;  // calcola il vettore velocità di separazione e coesione
-  void avoid_edges(const float width, const float height);
+  void avoid_edges(const float edges_width, const float edges_height);
 
  public:
   float abs_distance_from(
@@ -58,10 +59,11 @@ class Boid {
   const Vec_2d& getVelocity() const;
   void setPosition(const Vec_2d& pos);
   void setVelocity(const Vec_2d& vel);
-  void update(const Params& params, const std::vector<Boid>& flock,
-              const float max_speed, const float width,
-              const float height);  // aggiunge i modificatori di velocità,
-                                    // limita la velocità e poi sposta il boid
+  void update(
+      const Params& simulation_params, const std::vector<Boid>& flock,
+      const float max_speed, const float edges_width,
+      const float edges_height);  // aggiunge i modificatori di velocità,
+                                  // limita la velocità e poi sposta il boid
   void draw_on(
       sf::RenderWindow& window) const;  // disegna il boid sulla finestra sfml
 };
@@ -81,30 +83,38 @@ struct Stats {
     time += 0;
     return *this;
   }
+};
 
-};  // struttura delle statistiche
+// struttura delle statistiche
 
-void inputData(int& size, int& period, Params& parameters);
-Stats statistics(const std::vector<Boid>& flock,
-                 const std::chrono::time_point<std::chrono::steady_clock>&
-                     start_time);  // calcola le statistiche dello stormo in un
-                                   // determinato momento
+bool checkParametersValidity(int flock_size, int acquisiton_period,
+                             Params& simulation_params);
+void inputData(int& flock_size, int& acquisiton_period,
+               Params& simulation_params);
 
-void simulation(sf::RenderWindow& window, std::vector<Boid>& flock,
-                Params& params, const float max_speed, std::vector<Boid>& read,
-                std::mutex& synchro);
+void runSimulation(sf::RenderWindow& window, std::vector<Boid>& flock,
+                   const Params& simulation_params, const float max_speed,
+                   std::vector<Boid>& flock_view, std::mutex& synchro_tool);
+
+Stats calculateStatistics(
+    const std::vector<Boid>& flock_view,
+    const std::chrono::time_point<std::chrono::steady_clock>&
+        start_time);  // calcola le statistiche dello stormo in un
+                      // determinato momento
 void fillStatsVector(
-    const std::vector<Boid>& flock, std::vector<Stats>& vec,
+    const std::vector<Boid>& flock_view, std::vector<Stats>& timestamped_stats,
     const std::chrono::time_point<std::chrono::steady_clock>& start_time);
-void update_Stats(const std::vector<Boid>& flock,
-                  std::vector<Stats>& timestamped_stats, int elapsed,
-                  sf::RenderWindow& window, std::mutex& synchro);
-void instantiateStatsFile(std::string& file, const std::vector<Stats>& vec);
-void printStats(const std::vector<Stats>& vec);
-int askTxt();
-void exportStats(const std::vector<Stats>& vec);
-void exportPlot(const std::vector<Stats>& vec);
-int askPng();
-void plotStats(const std::vector<Stats>& stats, int conditional,
-               const std::string& name);
+void update_Stats(const std::vector<Boid>& flock_view,
+                  std::vector<Stats>& timestamped_stats, int acquisiton_period,
+                  sf::RenderWindow& window, std::mutex& synchro_tool);
+
+std::string namingFile();
+bool askForTxt();
+void instantiateStatsFile(std::ostringstream& output_str);
+void exportStats(const std::vector<Stats>& timestamped_stats);
+
+bool askForPng();
+void plotStats(const std::vector<Stats>& timestamped_stats, bool png_option,
+               const std::string& png_file_name);
+void exportPlot(const std::vector<Stats>& timestamped_stats);
 #endif
