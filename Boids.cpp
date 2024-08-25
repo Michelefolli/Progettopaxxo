@@ -258,7 +258,7 @@ Stats calculateStatistics(
         return sum += d_sigma_i / n;
       });
   stats.sigma_d =
-      std::sqrt(sigma_d_val - ((std::pow(d_mean_val, 2.f) / n - 2)));
+      std::sqrt(sigma_d_val - (std::pow(d_mean_val, 2.f) / (n - 2)));
 
   return stats;
 }
