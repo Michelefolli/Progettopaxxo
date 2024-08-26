@@ -9,11 +9,14 @@
 #include <thread>
 #include <vector>
 
+// Minimal implementation of a 2 dimensional vector with basic algebraic
+// operations
 struct Vec_2d {
-  Vec_2d(float x_val, float y_val)
-      : x(x_val), y(y_val) {}  // do we really need it?
+  Vec_2d(float x_val, float y_val)  // Constructor used to ensure the proper
+      : x(x_val), y(y_val) {}       // inizialization of every Vec_2d object
   float x;
   float y;
+  // algebracic operations
   Vec_2d operator+(const Vec_2d& v) const { return Vec_2d(x + v.x, y + v.y); }
   Vec_2d operator-(const Vec_2d& v) const { return Vec_2d(x - v.x, y - v.y); }
   Vec_2d operator*(const float c) const { return Vec_2d(x * c, y * c); }
@@ -24,55 +27,59 @@ struct Vec_2d {
     return *this;
   }
 
-  float norm() const { return std::sqrt(x * x + y * y); }  // norma del vettore
+  float norm() const { return std::sqrt(x * x + y * y); }
+};
 
-};  // vettore a due dimensioni. DUBBIO: operatori e norma da definire nel cpp?
-
+// The struct provides a way to gather all of the model's parameters in a single
+// object
 struct Params {
-  float sep{};       // fattore di separazione
-  float alig{};      // fattore di allineamento
-  float cohes{};     // fattore di coesione
-  float dist{};      // raggio visivo dei boids
-  float dist_sep{};  // distanza minima
-};  // parametri dello stormo
+  float sep{};       // Separation coefficient
+  float alig{};      // Alignment coefficient
+  float cohes{};     // Cohesion coefficient
+  float dist{};      // Maximum interaction distance
+  float dist_sep{};  // Distance threshold for separation law
+};
 
+/*
+ * Class governing the behaviour of the constituents of the simulated flock
+ * Private member functions are the various flight laws imposed on the BOIDs
+ * and are applied through the public member function update.
+ * The other public member functions offer access to the BOIDs' specifics for
+ * external functions
+ */
 class Boid {
  private:
   Vec_2d position;
   Vec_2d velocity;
-  void limit(const float max_speed);  // limite di velocità
-  const Vec_2d separation(const std::vector<Boid>& flock,
-                          const Params& simulation_params)
-      const;  // calcola il vettore velocità di separazione
+  void limit(const float max_speed);
+  const Vec_2d separation(const std::vector<Boid>& flock,   //
+                          const Params& simulation_params)  //
+      const;
 
   const Vec_2d alignment_and_cohesion(const std::vector<Boid>& flock,
-                                      const Params& simulation_params)
-      const;  // calcola il vettore velocità di separazione e coesione
+                                      const Params& simulation_params) const;
   void avoid_edges(const float edges_width, const float edges_height);
 
  public:
-  float abs_distance_from(
-      const Boid& boid_j) const;  // valore assoluto della distanza tra due boid
-  Boid(Vec_2d position_val, Vec_2d velocity_val)
+  float abs_distance_from(const Boid& boid_j) const;
+  Boid(Vec_2d position_val,  // Constructor to ensure the correct inizialization
+       Vec_2d velocity_val)  // of every BOID object
       : position(position_val), velocity(velocity_val) {}
   const Vec_2d& getPosition() const;
   const Vec_2d& getVelocity() const;
-  void setPosition(const Vec_2d& pos);
-  void setVelocity(const Vec_2d& vel);
-  void update(
-      const Params& simulation_params, const std::vector<Boid>& flock,
-      const float max_speed, const float edges_width,
-      const float edges_height);  // aggiunge i modificatori di velocità,
-                                  // limita la velocità e poi sposta il boid
-  void draw_on(
-      sf::RenderWindow& window) const;  // disegna il boid sulla finestra sfml
+  void update(const Params& simulation_params, const std::vector<Boid>& flock,
+              const float max_speed, const float edges_width,
+              const float edges_height);
+  void draw_on(sf::RenderWindow& window) const;
 };
 
+// Aggregate of the statistical values calculated during the simulation along
+// with a time coordinate
 struct Stats {
-  float v_mean{};   // velocità media
-  float d_mean{};   // distanza media
-  float sigma_v{};  // deviazione stardard velocità
-  float sigma_d{};  // deviazione standard distanza
+  float v_mean{};   // Mean velocity
+  float d_mean{};   // Mean distance
+  float sigma_v{};  // Velocity standard deviation
+  float sigma_d{};  // Distance standard deviation
   float time{};
 
   Stats& operator+=(const Stats& s) {
@@ -85,17 +92,19 @@ struct Stats {
   }
 };
 
-// struttura delle statistiche
-
+// Input handling functions
 bool checkParametersValidity(int flock_size, int acquisiton_period,
                              Params& simulation_params);
 void inputData(int& flock_size, int& acquisiton_period,
                Params& simulation_params);
 
+// Function responsible for running the simulation
 void runSimulation(sf::RenderWindow& window, std::vector<Boid>& flock,
                    const Params& simulation_params, const float max_speed,
                    std::vector<Boid>& flock_view, std::mutex& synchro_tool);
 
+// Functions responsible for calculating and gathering the stats during the
+// simuation
 Stats calculateStatistics(
     const std::vector<Boid>& flock_view,
     const std::chrono::time_point<std::chrono::steady_clock>&
@@ -108,11 +117,11 @@ void update_Stats(const std::vector<Boid>& flock_view,
                   std::vector<Stats>& timestamped_stats, int acquisiton_period,
                   sf::RenderWindow& window, std::mutex& synchro_tool);
 
+// Output handling functions
 std::string namingFile();
 bool askForTxt();
 void instantiateStatsFile(std::ostringstream& output_str);
 void exportStats(const std::vector<Stats>& timestamped_stats);
-
 bool askForPng();
 void plotStats(const std::vector<Stats>& timestamped_stats, bool png_option,
                const std::string& png_file_name);

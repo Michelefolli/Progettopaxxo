@@ -5,23 +5,24 @@
 #include "Boids.hpp"
 
 int main() {
-  const float max_speed = 10;
+  const float max_speed = 10;  // Arbitrarily chosen
   const unsigned int screen_width = sf::VideoMode::getDesktopMode().width;
   const unsigned int screen_height = sf::VideoMode::getDesktopMode().height;
 
+  // Inizialize key objects
+  Params simulation_params{};
+  int acquisiton_period{};
+  int flock_size{};
+
+  inputData(flock_size, acquisiton_period, simulation_params);
+
+  // Set up the rng infrastructure
   std::random_device rd;
   std::default_random_engine generator(rd());
   std::uniform_real_distribution<float> velocity_distribution(
       -(max_speed / std::sqrt(2.f)), (max_speed / std::sqrt(2.f)));
 
-  Params simulation_params{};  // parametri totalmente a caso, sono quasi
-                               // sicuramente responsabili dello strano
-                               // comportamento
-  int acquisiton_period{};     // millisecondi tra un'acquisizione e l'altra
-  int flock_size{};
-
-  inputData(flock_size, acquisiton_period, simulation_params);
-
+  // Randomly generates the flock
   std::vector<Boid> flock;
   for (int i = 0; i < flock_size; ++i) {
     Boid boid(
@@ -31,24 +32,34 @@ int main() {
         {velocity_distribution(generator), velocity_distribution(generator)});
 
     flock.push_back(boid);
-  }  // genera i boid casualmente e li aggiunge allo stormo
+  }
 
+  // Creates a copy of flock that can be read to minimize lag due to mutex lock
   auto flock_view = flock;
   std::vector<Stats> timestamped_stats;
+
+  // Mutex used to ensure consistency in the multithreaded environment
   std::mutex synchro_tool;
 
+  // Inizialization of the SFML window
   sf::RenderWindow window(sf::VideoMode(screen_width, screen_height),
                           "Boids Simulation");  // crea la finestra
   window.setPosition({0, 0});
 
-  std::thread first(update_Stats, std::cref(flock_view),
-                    std::ref(timestamped_stats), std::ref(acquisiton_period),
-                    std::ref(window), std::ref(synchro_tool));
+  // Set up parallel thread for stats handling
+  std::thread parallel(update_Stats, std::cref(flock_view),
+                       std::ref(timestamped_stats), std::ref(acquisiton_period),
+                       std::ref(window), std::ref(synchro_tool));
 
+  // Start simulation
   runSimulation(window, flock, simulation_params, max_speed, flock_view,
                 synchro_tool);
 
-  first.join();  // chiediamo all'utente se vuole stampare
+  // As soon as the window is closed the 2 functions stop looping and the thread
+  // are re-joined
+  parallel.join();
+  
+  // Call for output handling
   exportStats(timestamped_stats);
   exportPlot(timestamped_stats);
 
