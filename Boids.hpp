@@ -13,25 +13,20 @@
 // operations
 struct Vec_2d {
   Vec_2d(float x_val, float y_val)  // Constructor used to ensure the proper
-      : x(x_val), y(y_val) {}       // inizialization of every Vec_2d object
+      : x(x_val), y(y_val) {}       // initialization of every Vec_2d object
   float x;
   float y;
-  // algebracic operations
-  Vec_2d operator+(const Vec_2d& v) const { return Vec_2d(x + v.x, y + v.y); }
-  Vec_2d operator-(const Vec_2d& v) const { return Vec_2d(x - v.x, y - v.y); }
-  Vec_2d operator*(const float c) const { return Vec_2d(x * c, y * c); }
-  Vec_2d operator/(const float c) const { return Vec_2d(x / c, y / c); }
-  Vec_2d& operator+=(const Vec_2d& v) {
-    x += v.x;
-    y += v.y;
-    return *this;
-  }
+  // algebraic operations
+  Vec_2d operator+(const Vec_2d& v) const;
+  Vec_2d operator-(const Vec_2d& v) const;
+  Vec_2d operator*(const float c) const;
+  Vec_2d operator/(const float c) const;
+  Vec_2d& operator+=(const Vec_2d& v);
 
-  float norm() const { return std::sqrt(x * x + y * y); }
+  float norm() const;
 };
 
-// The struct provides a way to gather all of the model's parameters in a single
-// object
+// Structure to hold all parameters for the flock simulation model
 struct Params {
   float sep{};       // Separation coefficient
   float alig{};      // Alignment coefficient
@@ -41,19 +36,19 @@ struct Params {
 };
 
 /*
- * Class governing the behaviour of the constituents of the simulated flock
- * Private member functions are the various flight laws imposed on the BOIDs
- * and are applied through the public member function update.
- * The other public member functions offer access to the BOIDs' specifics for
- * external functions
+ * Class that governs the behavior of each boid in the simulated flock.
+ * Private member functions implement the flight laws for the boids,
+ * applied through the public `update` method.
+ * Public methods provide access to boid properties for external functions.
  */
+
 class Boid {
  private:
   Vec_2d position;
   Vec_2d velocity;
   void limit(const float max_speed);
-  const Vec_2d separation(const std::vector<Boid>& flock,   //
-                          const Params& simulation_params)  //
+  const Vec_2d separation(const std::vector<Boid>& flock,   
+                          const Params& simulation_params)  
       const;
 
   const Vec_2d alignment_and_cohesion(const std::vector<Boid>& flock,
@@ -62,7 +57,7 @@ class Boid {
 
  public:
   float abs_distance_from(const Boid& boid_j) const;
-  Boid(Vec_2d position_val,  // Constructor to ensure the correct inizialization
+  Boid(Vec_2d position_val,  // Constructor to ensure the correct initialization
        Vec_2d velocity_val)  // of every BOID object
       : position(position_val), velocity(velocity_val) {}
   const Vec_2d& getPosition() const;
@@ -81,22 +76,9 @@ struct Stats {
   float sigma_v{};  // Velocity standard deviation
   float sigma_d{};  // Distance standard deviation
   float time{};
-  /*
-    Stats& operator+=(const Stats& s) {
-      v_mean += s.v_mean;
-      d_mean += s.d_mean;
-      sigma_v += s.sigma_v;
-      sigma_d += s.sigma_d;
-      time += 0;
-      return *this;
-    }*/
+  
 };
 
-// Input handling functions
-bool checkParametersValidity(int flock_size, int acquisiton_period,
-                             Params& simulation_params);
-void inputData(int& flock_size, int& acquisiton_period,
-               Params& simulation_params);
 
 // Functions responsible for running the simulation
 auto scaleBackground(const sf::RenderWindow& window,
@@ -112,22 +94,12 @@ void runSimulation(sf::RenderWindow& window,
 Stats calculateStatistics(
     const std::vector<Boid>& flock_view,
     const std::chrono::time_point<std::chrono::steady_clock>&
-        start_time);  // calcola le statistiche dello stormo in un
-                      // determinato momento
+        start_time);  
 void fillStatsVector(
     const std::vector<Boid>& flock_view, std::vector<Stats>& timestamped_stats,
     const std::chrono::time_point<std::chrono::steady_clock>& start_time);
-void update_Stats(const std::vector<Boid>& flock_view,
+void updateStats(const std::vector<Boid>& flock_view,
                   std::vector<Stats>& timestamped_stats, int acquisiton_period,
                   sf::RenderWindow& window, std::mutex& synchro_tool);
 
-// Output handling functions
-std::string namingFile();
-bool askForTxt();
-void instantiateStatsFile(std::ostringstream& output_str);
-void exportStats(const std::vector<Stats>& timestamped_stats);
-bool askForPng();
-void plotStats(const std::vector<Stats>& timestamped_stats, bool png_option,
-               const std::string& png_file_name);
-void exportPlot(const std::vector<Stats>& timestamped_stats);
 #endif

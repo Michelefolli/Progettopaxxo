@@ -1,8 +1,10 @@
+#include "Boids.hpp"
+#include "IO_handling.hpp"
+
 #include <mutex>
 #include <random>
 #include <thread>
 
-#include "Boids.hpp"
 
 int main() {
   const float max_speed = 10;  // Arbitrarily chosen
@@ -54,7 +56,7 @@ int main() {
   window.setPosition({0, 0});
 
   // Set up parallel thread for stats handling
-  std::thread parallel(update_Stats, std::cref(flock_view),
+  std::thread parallel(updateStats, std::cref(flock_view),
                        std::ref(timestamped_stats), std::ref(acquisiton_period),
                        std::ref(window), std::ref(synchro_tool));
 

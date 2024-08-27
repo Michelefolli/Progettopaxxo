@@ -13,44 +13,23 @@
 #include <sstream>
 #include <vector>
 
-// The significance of the simulation and it's statistics is upheld by ensuring
-// the correctness of the inputs
-bool checkParametersValidity(int flock_size, int acquisiton_period,
-                             Params& simulation_params) {
-  if (flock_size > 1 && acquisiton_period > 10 && simulation_params.sep > 0 &&
-      0 < simulation_params.alig && simulation_params.alig < 1 &&
-      simulation_params.cohes > 0 && 0 < simulation_params.dist_sep &&
-      simulation_params.dist_sep < simulation_params.dist) {
-    return true;
-  } else {
-    std::cout << "Invalid input";
-    return false;
-  }
+/*
+ * Algebraic operations for 2d vectors
+ */
+Vec_2d Vec_2d::operator+(const Vec_2d& v) const {
+  return Vec_2d(x + v.x, y + v.y);
 }
-
-// Flexibility is provided by enabling the user to choose many of the
-// simulation's key parameters
-void inputData(int& flock_size, int& acquisiton_period,
-               Params& simulation_params) {
-  while (!checkParametersValidity(flock_size, acquisiton_period,
-                                  simulation_params)) {
-    std::cout << "Input the required data \n";
-    std::cout << "Number of Boids: ";
-    std::cin >> flock_size;
-    std::cout << "Stats' period of acquisition: ";
-    std::cin >> acquisiton_period;
-    std::cout << "Simulation parameters:\n" << "Separation coefficient: ";
-    std::cin >> simulation_params.sep;
-    std::cout << "Alignment coefficient: ";
-    std::cin >> simulation_params.alig;
-    std::cout << "Cohesion coefficient: ";
-    std::cin >> simulation_params.cohes;
-    std::cout << "Interaction distance: ";
-    std::cin >> simulation_params.dist;
-    std::cout << "Separation distance: ";
-    std::cin >> simulation_params.dist_sep;
-  }
+Vec_2d Vec_2d::operator-(const Vec_2d& v) const {
+  return Vec_2d(x - v.x, y - v.y);
 }
+Vec_2d Vec_2d::operator*(const float c) const { return Vec_2d(x * c, y * c); }
+Vec_2d Vec_2d::operator/(const float c) const { return Vec_2d(x / c, y / c); }
+Vec_2d& Vec_2d::operator+=(const Vec_2d& v) {
+  x += v.x;
+  y += v.y;
+  return *this;
+}
+float Vec_2d::norm() const { return std::sqrt(x * x + y * y); }
 
 // The repulsion from the borders being inversely proportional to the distance
 // from the edge minimizes the interference, ensuring minimal changes to the
@@ -60,8 +39,8 @@ void Boid::avoid_edges(const float edges_width, const float edges_height) {
   float repulsive_range = 100.f;
   auto distance_from_border = velocity.norm();
   auto epsilon = std::numeric_limits<
-      float>::epsilon();  // division and moltiplication by zero can lead to NaN
-                          // errors hence the need for small epsilons
+      float>::epsilon();  // division and multiplication by zero can lead to
+                          // NaN errors hence the need for small epsilons
 
   if (position.x < repulsive_range) {
     velocity.x += (distance_from_border + epsilon) *
@@ -71,8 +50,9 @@ void Boid::avoid_edges(const float edges_width, const float edges_height) {
     velocity.y += (distance_from_border + epsilon) *
                   (1 / (std::pow((std::abs(position.y)), 0.25f) + epsilon));
   }
-  // the "-" sign is necessary produce the negative velocity components for the
-  // correct implementation of the repulsion model, hence the magic number "-1"
+  // the "-" sign is necessary produce the negative velocity components for
+  // the correct implementation of the repulsion model, hence the magic number
+  // "-1"
   if (position.x > (edges_width - repulsive_range)) {
     velocity.x +=
         (distance_from_border + epsilon) * (-1) *
@@ -85,7 +65,7 @@ void Boid::avoid_edges(const float edges_width, const float edges_height) {
   };
 }
 
-// Limitig the velocity increases the fidelity to real life flocks ensuring a
+// Limiting the velocity increases the fidelity to real life flocks ensuring a
 // more significant simulation
 void Boid::limit(const float max_speed) {
   velocity = velocity * (max_speed / velocity.norm());
@@ -148,8 +128,8 @@ const Vec_2d Boid::alignment_and_cohesion(
 const Vec_2d& Boid::getPosition() const { return position; }
 const Vec_2d& Boid::getVelocity() const { return velocity; }
 
-// Streamlines the process of updating the Boids' coordinates by applyng all of
-// the laws consecutively.
+// Streamlines the process of updating the Boids' coordinates by applyng all
+// of the laws consecutively.
 void Boid::update(const Params& simulation_params,
                   const std::vector<Boid>& flock, const float max_speed,
                   const float edges_width, const float edges_height) {
@@ -194,9 +174,9 @@ void runSimulation(sf::RenderWindow& window,
   sf::Event event;
   sf::Sprite backgroundSprite(backgroundTexture);
   backgroundSprite.setScale(scaleBackground(window, backgroundTexture));
-  
+
   while (window.isOpen()) {
-    // Enables the ability to close thw window
+    // Enables the ability to close the window
     while (window.pollEvent(event)) {
       if (event.type == sf::Event::Closed) {
         window.close();
@@ -213,8 +193,9 @@ void runSimulation(sf::RenderWindow& window,
       boid.draw_on(window);
     }
 
-    // The possible lag caused by the stats calculation is reduced by shortening
-    // the locked mutex window thanks to the use of the flock_view vector
+    // The possible lag caused by the stats calculation is reduced by
+    // shortening the locked mutex window thanks to the use of the flock_view
+    // vector
     synchro_tool.lock();
     flock_view = flock;
     synchro_tool.unlock();
@@ -227,7 +208,7 @@ void runSimulation(sf::RenderWindow& window,
 Stats calculateStatistics(
     const std::vector<Boid>& flock_view,
     const std::chrono::time_point<std::chrono::steady_clock>& start_time) {
-  Stats stats{};  // Proper inizialization of the Stats instance
+  Stats stats{};  // Proper initialization of the Stats instance
   std::chrono::time_point current_time =
       std::chrono::steady_clock::now();  // gets current time
   auto time_span = std::chrono::duration_cast<std::chrono::duration<float>>(
@@ -245,7 +226,6 @@ Stats calculateStatistics(
   v_mean_vec = v_mean_vec / n;
   stats.v_mean = v_mean_vec.norm();  // Mean velocity norm
 
-  
   auto sigma_v_val = std::accumulate(
       flock_view.begin(), flock_view.end(), 0.f,
       [&v_mean_vec](float sum, const Boid& boid) {
@@ -282,60 +262,22 @@ Stats calculateStatistics(
         return total_dev += std::pow((dist_ij - stats.d_mean), 2.f);
       });
 
-  // Get distance standard deviatiom
+  // Get distance standard deviation
   stats.sigma_d = std::sqrt(sqrd_deviation / (total_pairs - 1));
-  /*  // The mean of the individual means is calculated
-    float d_mean_val = std::accumulate(
-        flock_view.begin(), flock_view.end(), 0.f,
-        [&flock_view, n](float sum, const Boid& boid_i) {
-          float d_mean_i = std::accumulate(
-              flock_view.begin(), flock_view.end(), 0.f,
-              [&boid_i, n](float sum_d, const Boid& boid_j) {
-                return sum_d += (boid_i.abs_distance_from(boid_j) / (n - 1));
-              });
-          return sum += (d_mean_i / n);
-        });
-
-
-    stats.d_mean = d_mean_val;
-    // Standard deviation for velocity
-
-    // The distance standard deviation is obtained through the Root square sum
-    auto sigma_d_val = std::accumulate(
-        flock_view.begin(), flock_view.end(), 0.f,
-        [&flock_view, &d_mean_val, n](float sum, const Boid& boid_i) {
-          float d_sigma_i = std::accumulate(
-              flock_view.begin(), flock_view.end(), 0.f,
-              [&d_mean_val, &boid_i, n](float sum_d, const Boid& boid_j) {
-                return sum_d +=
-                       std::pow(boid_i.abs_distance_from(boid_j) - d_mean_val,
-                                2.f) /
-                       (n - 2);
-              });
-          return sum += d_sigma_i / (n * n);
-        });
-    // The subratction is a correction for the fact that the nested accumulate
-    // accounts for the case where i = j
-    stats.sigma_d =
-        std::sqrt(sigma_d_val - (std::pow(d_mean_val, 2.f) / (n * (n - 2)))); */
-
+  
   return stats;
 }
 
-void fillStatsVector(const std::vector<Boid>& flock_view,
-                     std::vector<Stats>& timestamped_stats,
-                     const std::chrono::time_point<std::chrono::steady_clock>&
-                         start_time) {  // funzione che
-                                        // riempie il vettore
-                                        // delle statistiche
-
+void fillStatsVector(
+    const std::vector<Boid>& flock_view, std::vector<Stats>& timestamped_stats,
+    const std::chrono::time_point<std::chrono::steady_clock>& start_time) {
   timestamped_stats.push_back(calculateStatistics(flock_view, start_time));
 }
 
 // Encapsulates the stats handling process in a single function
-void update_Stats(const std::vector<Boid>& flock_view,
-                  std::vector<Stats>& timestamped_stats, int acquisiton_period,
-                  sf::RenderWindow& window, std::mutex& synchro_tool) {
+void updateStats(const std::vector<Boid>& flock_view,
+                 std::vector<Stats>& timestamped_stats, int acquisiton_period,
+                 sf::RenderWindow& window, std::mutex& synchro_tool) {
   auto start_time = std::chrono::steady_clock::now();
   auto last_update_time = start_time;
   auto current_time = start_time;
@@ -347,162 +289,10 @@ void update_Stats(const std::vector<Boid>& flock_view,
     if (current_time - last_update_time >=
         std::chrono::milliseconds(acquisiton_period)) {
       last_update_time =
-          current_time;  // mantains the if statement proper inner working
+          current_time;  // miantains the if statement proper inner working
       synchro_tool.lock();
       fillStatsVector(flock_view, timestamped_stats, start_time);
       synchro_tool.unlock();
     }
   }
-}
-
-// Uses the same function for naming both .png and .txt files
-std::string namingFile() {
-  std::string file_name{};
-  std::cout << "Insert the name of the  file: ";
-  std::cin >> file_name;
-  return file_name;
-}
-
-// Ensures that the input is either 1 or 0 as so to avoid missclicks
-bool askForTxt() {
-  int txt_option{};
-  while (true) {
-    std::cout << "Input 1 if you want to export the stats as a .txt file, "
-                 "otherwise input 0: ";
-    std::cin >> txt_option;
-
-    if (txt_option == 0 || txt_option == 1) {
-      break;
-    } else {
-      std::cout << "Invalid input. Please enter 0 or 1.\n";
-    }
-  }
-  return txt_option;
-}
-
-// Enables the ability to easily save the simulation's stats by .txt file
-void instantiateStatsFile(std::ostringstream& output_str) {
-  std::string txt_file_name = namingFile() + ".txt";
-  std::ofstream file_output(txt_file_name);
-  if (!file_output) {  // Ensures the output pipeline was succesfuly opened
-    std::cout << "There was an error in the creation of the file \n";
-  } else
-    file_output << output_str.str();
-  file_output.close();
-}
-
-// Handles that the stats get exported properly and with an appropriate number
-// of significant digits. The setprecision numbers are arbitrary
-void exportStats(const std::vector<Stats>& timestamped_statistics) {
-  std::ostringstream output_str;
-
-  std::for_each(timestamped_statistics.begin(), timestamped_statistics.end(),
-                [&output_str](const Stats& stat) {
-                  output_str << std::fixed << std::setprecision(1)
-                             << stat.d_mean << "  " << stat.sigma_d << "  "
-                             << std::setprecision(3) << stat.v_mean << "  "
-                             << stat.sigma_v << "  " << std::setprecision(2)
-                             << stat.time << "\n";
-                });
-
-  if (askForTxt()) {  // Ask for permission to save the stats before calling the
-                      // function
-    instantiateStatsFile(output_str);
-  }
-
-  std::cout << output_str.str();  // Prints the stats on the shell
-}
-
-// Ensures that the input is either 1 or 0 as so to avoid missclicks
-bool askForPng() {
-  int png_option{};
-  while (true) {
-    std::cout << "Input 1 if you want to export the plots as a .png file, "
-                 "otherwise input 0: ";
-    std::cin >> png_option;
-
-    if (png_option == 0 || png_option == 1) {
-      break;
-    } else {
-      std::cout << "Invalid input. Please enter 0 or 1.\n";
-    }
-  }
-  return png_option;
-}
-
-void plotStats(const std::vector<Stats>& timestamped_stats, bool png_option,
-               const std::string& png_file_name) {
-  // Open pipeline
-  FILE* gnuplotPipe = popen("gnuplot -persistent", "w");
-
-  if (gnuplotPipe) {  // Ensure the pipeline was correctly opened
-
-    if (png_option) {  // Creates .png file if asked to
-      fprintf(
-          gnuplotPipe,
-          "set terminal pngcairo size 1200,800 enhanced font 'Verdana,10'\n");
-      fprintf(gnuplotPipe, "set output '%s'\n", png_file_name.c_str());
-    }
-
-    // Set up the 2x2 grid of plots
-    fprintf(gnuplotPipe,
-            "set multiplot layout 2,2 title 'Statistics Over Time'\n");
-
-    // Plot v_mean vs time
-    fprintf(gnuplotPipe, "set title 'v\\_mean vs time'\n");
-    fprintf(gnuplotPipe, "plot '-' with lines title 'v\\_mean'\n");
-    std::for_each(timestamped_stats.begin(), timestamped_stats.end(),
-                  [&gnuplotPipe](const Stats& stat) {
-                    fprintf(gnuplotPipe, "%f %f\n", stat.time, stat.v_mean);
-                  });
-    fprintf(gnuplotPipe, "e\n");
-
-    // Plot sigma_v vs time
-    fprintf(gnuplotPipe, "set title 'sigma\\_v vs time'\n");
-    fprintf(gnuplotPipe, "plot '-' with lines title 'sigma\\_v'\n");
-    std::for_each(timestamped_stats.begin(), timestamped_stats.end(),
-                  [&gnuplotPipe](const Stats& stat) {
-                    fprintf(gnuplotPipe, "%f %f\n", stat.time, stat.sigma_v);
-                  });
-    fprintf(gnuplotPipe, "e\n");
-
-    // Plot d_mean vs time
-    fprintf(gnuplotPipe, "set title 'd\\_mean vs time'\n");
-    fprintf(gnuplotPipe, "plot '-' with lines title 'd\\_mean'\n");
-    std::for_each(timestamped_stats.begin(), timestamped_stats.end(),
-                  [&gnuplotPipe](const Stats& stat) {
-                    fprintf(gnuplotPipe, "%f %f\n", stat.time, stat.d_mean);
-                  });
-    fprintf(gnuplotPipe, "e\n");
-
-    // Plot sigma_d vs time
-    fprintf(gnuplotPipe, "set title 'sigma\\_d vs time'\n");
-    fprintf(gnuplotPipe, "plot '-' with lines title 'sigma\\_d'\n");
-    std::for_each(timestamped_stats.begin(), timestamped_stats.end(),
-                  [&gnuplotPipe](const Stats& stat) {
-                    fprintf(gnuplotPipe, "%f %f\n", stat.time, stat.sigma_d);
-                  });
-    fprintf(gnuplotPipe, "e\n");
-
-    // End multiplot
-    fprintf(gnuplotPipe, "unset multiplot\n");
-
-    // Close the pipe to Gnuplot
-    pclose(gnuplotPipe);
-
-  } else {
-    std::cout << "Error: Could not open pipe to Gnuplot. \n" << std::endl;
-  }
-}
-
-// Handles the creation of the stats' plots
-void exportPlot(const std::vector<Stats>& timestamped_stats) {
-  bool png_option = askForPng();  // Asks the user if he wants to export as .png
-  std::string png_file_name{};
-  if (png_option) {
-    png_file_name =
-        namingFile() + ".png";  // Eventually asks for the .png's name
-  }
-  // Creates plots and exports if asked
-  plotStats(timestamped_stats, png_option, png_file_name);
 }
