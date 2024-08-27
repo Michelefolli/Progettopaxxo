@@ -41,6 +41,13 @@ int main() {
   // Mutex used to ensure consistency in the multithreaded environment
   std::mutex synchro_tool;
 
+  sf::Texture backgroundTexture;
+
+  if (!backgroundTexture.loadFromFile("sky_background.jpg")) {
+    std::cout << "Failed to load background. Simulation aborted";
+    return 1;
+  }
+
   // Inizialization of the SFML window
   sf::RenderWindow window(sf::VideoMode(screen_width, screen_height),
                           "Boids Simulation");  // crea la finestra
@@ -52,13 +59,13 @@ int main() {
                        std::ref(window), std::ref(synchro_tool));
 
   // Start simulation
-  runSimulation(window, flock, simulation_params, max_speed, flock_view,
-                synchro_tool);
+  runSimulation(window, backgroundTexture, flock, simulation_params, max_speed,
+                flock_view, synchro_tool);
 
   // As soon as the window is closed the 2 functions stop looping and the thread
   // are re-joined
   parallel.join();
-  
+
   // Call for output handling
   exportStats(timestamped_stats);
   exportPlot(timestamped_stats);

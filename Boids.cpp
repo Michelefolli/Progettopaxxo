@@ -165,22 +165,36 @@ void Boid::update(const Params& simulation_params,
 }
 
 void Boid::draw_on(sf::RenderWindow& window) const {
-  sf::CircleShape shape(5, 3);  // sets traingle shape
+  sf::CircleShape shape(6, 3);  // sets traingle shape
   shape.setPosition((position.x), (position.y));
-  shape.setFillColor(sf::Color::White);
+  shape.setFillColor(sf::Color::Black);
   window.draw(shape);
 }
 
+auto scaleBackground(const sf::RenderWindow& window,
+                     const sf::Texture& backgroundTexture) {
+  sf::Vector2f windowSize(window.getSize());
+  sf::Vector2f textureSize(backgroundTexture.getSize());
+  sf::Vector2f scale(windowSize.x / textureSize.x,
+                     windowSize.y / textureSize.y);
+  return scale;
+}
+
 // Encapsulates the whole simulation process in a single function
-void runSimulation(sf::RenderWindow& window, std::vector<Boid>& flock,
-                   const Params& simulation_params, const float max_speed,
-                   std::vector<Boid>& flock_view, std::mutex& synchro_tool) {
+void runSimulation(sf::RenderWindow& window,
+                   const sf::Texture& backgroundTexture,
+                   std::vector<Boid>& flock, const Params& simulation_params,
+                   const float max_speed, std::vector<Boid>& flock_view,
+                   std::mutex& synchro_tool) {
   const float edges_width =
       static_cast<float>(sf::VideoMode::getDesktopMode().width);
   const float edges_height =
       static_cast<float>(sf::VideoMode::getDesktopMode().height);
   // Ensures that the simulation keeps running while the window stays open
   sf::Event event;
+  sf::Sprite backgroundSprite(backgroundTexture);
+  backgroundSprite.setScale(scaleBackground(window, backgroundTexture));
+  
   while (window.isOpen()) {
     // Enables the ability to close thw window
     while (window.pollEvent(event)) {
@@ -190,6 +204,7 @@ void runSimulation(sf::RenderWindow& window, std::vector<Boid>& flock,
     }
     window.clear();  // clears the window every frame
 
+    window.draw(backgroundSprite);
     // Loops over the flock vector to update and draw every boid entity
     for (auto& boid : flock) {
       boid.update(simulation_params, flock, max_speed, edges_width,
@@ -224,54 +239,85 @@ Stats calculateStatistics(
   float n = static_cast<float>(flock_view.size());  // size of the flock
 
   // Mean velocity vector
-  Vec_2d v_mean_val =
-      std::accumulate(flock_view.begin(), flock_view.end(), Vec_2d(0.f, 0.f),
-                      [n](Vec_2d sum, const Boid& boid) {
-                        return sum += (boid.getVelocity() / n);
-                      });
-  // The mean of the individual means is calculated
-  float d_mean_val = std::accumulate(
-      flock_view.begin(), flock_view.end(), 0.f,
-      [&flock_view, n](float sum, const Boid& boid_i) {
-        float d_mean_i = std::accumulate(
-            flock_view.begin(), flock_view.end(), 0.f,
-            [&boid_i, n](float sum_d, const Boid& boid_j) {
-              return sum_d += (boid_i.abs_distance_from(boid_j) / (n - 1));
-            });
-        return sum += (d_mean_i / n);
-      });
+  Vec_2d v_mean_vec = std::accumulate(
+      flock_view.begin(), flock_view.end(), Vec_2d(0.f, 0.f),
+      [](Vec_2d sum, const Boid& boid) { return sum += (boid.getVelocity()); });
+  v_mean_vec = v_mean_vec / n;
+  stats.v_mean = v_mean_vec.norm();  // Mean velocity norm
 
-  stats.v_mean = v_mean_val.norm();  // Mean velocity norm
-  stats.d_mean = d_mean_val;
-  // Standard deviation for velocity
+  
   auto sigma_v_val = std::accumulate(
       flock_view.begin(), flock_view.end(), 0.f,
-      [&v_mean_val, n](float sum, const Boid& boid) {
-        return sum +=
-               std::pow(boid.getVelocity().norm() - v_mean_val.norm(), 2.f) /
-               (n - 1);
+      [&v_mean_vec](float sum, const Boid& boid) {
+        return sum += std::pow((boid.getVelocity() - v_mean_vec).norm(), 2.f);
       });
 
-  stats.sigma_v = std::sqrt(sigma_v_val);
+  stats.sigma_v = std::sqrt(sigma_v_val / (n - 1));
 
-  // The distance standard deviation is obtained through the Root square sum
-  auto sigma_d_val = std::accumulate(
-      flock_view.begin(), flock_view.end(), 0.f,
-      [&flock_view, &d_mean_val, n](float sum, const Boid& boid_i) {
-        float d_sigma_i = std::accumulate(
-            flock_view.begin(), flock_view.end(), 0.f,
-            [&d_mean_val, &boid_i, n](float sum_d, const Boid& boid_j) {
-              return sum_d +=
-                     std::pow(boid_i.abs_distance_from(boid_j) - d_mean_val,
-                              2.f) /
-                     (n - 2);
-            });
-        return sum += d_sigma_i / (n * n);
+  std::vector<float> pairwise_distances{};
+
+  // Nested loop to gather all the pairwise distances between boids
+  for (int i{}; i < static_cast<int>(n); ++i) {
+    for (int j = i + 1; j < static_cast<int>(n); ++j) {
+      pairwise_distances.push_back(
+          flock_view[static_cast<unsigned int>(i)].abs_distance_from(
+              flock_view[static_cast<unsigned int>(j)]));
+    }
+  }
+
+  // Get the total number of pairs
+  float total_pairs = static_cast<float>(pairwise_distances.size());
+
+  // Sum all of the pairwise distances
+  float dist_sum = std::accumulate(pairwise_distances.begin(),
+                                   pairwise_distances.end(), 0.f);
+
+  // Get mean distance
+  stats.d_mean = dist_sum / total_pairs;
+
+  // Find the sum of all the squared deviation
+  float sqrd_deviation = std::accumulate(
+      pairwise_distances.begin(), pairwise_distances.end(), 0.f,
+      [&stats](float total_dev, const float& dist_ij) {
+        return total_dev += std::pow((dist_ij - stats.d_mean), 2.f);
       });
-  // The subratction is a correction for the fact that the nested accumulate
-  // accounts for the case where i = j
-  stats.sigma_d =
-      std::sqrt(sigma_d_val - (std::pow(d_mean_val, 2.f) / (n * (n - 2))));
+
+  // Get distance standard deviatiom
+  stats.sigma_d = std::sqrt(sqrd_deviation / (total_pairs - 1));
+  /*  // The mean of the individual means is calculated
+    float d_mean_val = std::accumulate(
+        flock_view.begin(), flock_view.end(), 0.f,
+        [&flock_view, n](float sum, const Boid& boid_i) {
+          float d_mean_i = std::accumulate(
+              flock_view.begin(), flock_view.end(), 0.f,
+              [&boid_i, n](float sum_d, const Boid& boid_j) {
+                return sum_d += (boid_i.abs_distance_from(boid_j) / (n - 1));
+              });
+          return sum += (d_mean_i / n);
+        });
+
+
+    stats.d_mean = d_mean_val;
+    // Standard deviation for velocity
+
+    // The distance standard deviation is obtained through the Root square sum
+    auto sigma_d_val = std::accumulate(
+        flock_view.begin(), flock_view.end(), 0.f,
+        [&flock_view, &d_mean_val, n](float sum, const Boid& boid_i) {
+          float d_sigma_i = std::accumulate(
+              flock_view.begin(), flock_view.end(), 0.f,
+              [&d_mean_val, &boid_i, n](float sum_d, const Boid& boid_j) {
+                return sum_d +=
+                       std::pow(boid_i.abs_distance_from(boid_j) - d_mean_val,
+                                2.f) /
+                       (n - 2);
+              });
+          return sum += d_sigma_i / (n * n);
+        });
+    // The subratction is a correction for the fact that the nested accumulate
+    // accounts for the case where i = j
+    stats.sigma_d =
+        std::sqrt(sigma_d_val - (std::pow(d_mean_val, 2.f) / (n * (n - 2)))); */
 
   return stats;
 }
@@ -338,7 +384,7 @@ bool askForTxt() {
 void instantiateStatsFile(std::ostringstream& output_str) {
   std::string txt_file_name = namingFile() + ".txt";
   std::ofstream file_output(txt_file_name);
-  if (!file_output) { // Ensures the output pipeline was succesfuly opened
+  if (!file_output) {  // Ensures the output pipeline was succesfuly opened
     std::cout << "There was an error in the creation of the file \n";
   } else
     file_output << output_str.str();
@@ -364,7 +410,7 @@ void exportStats(const std::vector<Stats>& timestamped_statistics) {
     instantiateStatsFile(output_str);
   }
 
-  std::cout << output_str.str(); // Prints the stats on the shell 
+  std::cout << output_str.str();  // Prints the stats on the shell
 }
 
 // Ensures that the input is either 1 or 0 as so to avoid missclicks
@@ -389,12 +435,12 @@ void plotStats(const std::vector<Stats>& timestamped_stats, bool png_option,
   // Open pipeline
   FILE* gnuplotPipe = popen("gnuplot -persistent", "w");
 
-  if (gnuplotPipe) { //Ensure the pipeline was correctly opened
-    
-    if (png_option) { // Creates .png file if asked to
+  if (gnuplotPipe) {  // Ensure the pipeline was correctly opened
+
+    if (png_option) {  // Creates .png file if asked to
       fprintf(
           gnuplotPipe,
-          "set terminal pngcairo size 800,600 enhanced font 'Verdana,10'\n");
+          "set terminal pngcairo size 1200,800 enhanced font 'Verdana,10'\n");
       fprintf(gnuplotPipe, "set output '%s'\n", png_file_name.c_str());
     }
 
@@ -449,13 +495,14 @@ void plotStats(const std::vector<Stats>& timestamped_stats, bool png_option,
   }
 }
 
-// Handles the creation of the stats' plots 
+// Handles the creation of the stats' plots
 void exportPlot(const std::vector<Stats>& timestamped_stats) {
-  bool png_option = askForPng(); // Asks the user if he wants to export as .png
+  bool png_option = askForPng();  // Asks the user if he wants to export as .png
   std::string png_file_name{};
   if (png_option) {
-    png_file_name = namingFile() + ".png"; // Eventually asks for the .png's name
+    png_file_name =
+        namingFile() + ".png";  // Eventually asks for the .png's name
   }
   // Creates plots and exports if asked
-  plotStats(timestamped_stats, png_option, png_file_name); 
+  plotStats(timestamped_stats, png_option, png_file_name);
 }

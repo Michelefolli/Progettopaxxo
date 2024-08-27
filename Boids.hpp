@@ -81,15 +81,15 @@ struct Stats {
   float sigma_v{};  // Velocity standard deviation
   float sigma_d{};  // Distance standard deviation
   float time{};
-
-  Stats& operator+=(const Stats& s) {
-    v_mean += s.v_mean;
-    d_mean += s.d_mean;
-    sigma_v += s.sigma_v;
-    sigma_d += s.sigma_d;
-    time += 0;
-    return *this;
-  }
+  /*
+    Stats& operator+=(const Stats& s) {
+      v_mean += s.v_mean;
+      d_mean += s.d_mean;
+      sigma_v += s.sigma_v;
+      sigma_d += s.sigma_d;
+      time += 0;
+      return *this;
+    }*/
 };
 
 // Input handling functions
@@ -98,10 +98,14 @@ bool checkParametersValidity(int flock_size, int acquisiton_period,
 void inputData(int& flock_size, int& acquisiton_period,
                Params& simulation_params);
 
-// Function responsible for running the simulation
-void runSimulation(sf::RenderWindow& window, std::vector<Boid>& flock,
-                   const Params& simulation_params, const float max_speed,
-                   std::vector<Boid>& flock_view, std::mutex& synchro_tool);
+// Functions responsible for running the simulation
+auto scaleBackground(const sf::RenderWindow& window,
+                     const sf::Texture& backgroundTexture);
+void runSimulation(sf::RenderWindow& window,
+                   const sf::Texture& backgroundTexture,
+                   std::vector<Boid>& flock, const Params& simulation_params,
+                   const float max_speed, std::vector<Boid>& flock_view,
+                   std::mutex& synchro_tool);
 
 // Functions responsible for calculating and gathering the stats during the
 // simuation
