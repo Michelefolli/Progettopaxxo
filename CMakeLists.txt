@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(progettopf VERSION 0.1.0)
+project(Project_PAXO VERSION 1.0.0)
 
 # abilita il supporto per i test, tra cui l'opzione BUILD_TESTING usata sotto
 include(CTest)
@@ -24,14 +24,16 @@ string(APPEND CMAKE_EXE_LINKER_FLAGS_DEBUG " -fsanitize=address,undefined -fno-o
 #   le dipendenze vengono identificate automaticamente
 find_package(SFML 2.5 COMPONENTS graphics REQUIRED)
 
-add_executable(main main.cpp Boids.cpp)
-target_link_libraries(main PRIVATE sfml-graphics)
+add_executable(Project_PAXO main.cpp Boids.cpp IO_handling.cpp)
+target_link_libraries(Project_PAXO PRIVATE sfml-graphics)
 
 # se il testing e' abilitato...
 #   per disabilitare il testing, passare -DBUILD_TESTING=OFF a cmake durante la fase di configurazione
 if (BUILD_TESTING)
-
-  # aggiungi l'eseguibile all.t
+    add_executable(Boid_test Boidtest.cpp Boids.cpp IO_handling.cpp)
+    target_link_libraries(Boid_test PRIVATE sfml-graphics)
+    add_test(NAME Boid_test COMMAND Boid_test)  
+# aggiungi l'eseguibile all.t
   # add_executable(all.t all.t.cpp complex.t.cpp)
   # aggiungi l'eseguibile all.t alla lista dei test
   # add_test(NAME all.t COMMAND all.t)

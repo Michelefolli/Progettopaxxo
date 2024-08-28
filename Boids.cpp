@@ -35,7 +35,7 @@ float Vec_2d::norm() const { return std::sqrt(x * x + y * y); }
 // from the edge minimizes the interference, ensuring minimal changes to the
 // original BOID model, while making the simulation more fluid. The exponent
 // 0.25 and the repulsive range 100. are arbitrary.
-void Boid::avoid_edges(const float edges_width, const float edges_height) {
+void Boid::avoidEdges(const float edges_width, const float edges_height) {
   float repulsive_range = 100.f;
   auto distance_from_border = velocity.norm();
   auto epsilon = std::numeric_limits<
@@ -136,7 +136,7 @@ void Boid::update(const Params& simulation_params,
   velocity += alignment_and_cohesion(flock, simulation_params) +
               separation(flock, simulation_params);
 
-  avoid_edges(edges_width, edges_height);
+  avoidEdges(edges_width, edges_height);
   if (velocity.norm() > max_speed) {
     limit(max_speed);
   }
@@ -144,13 +144,14 @@ void Boid::update(const Params& simulation_params,
       velocity;  // the time difference is assumed to be 1s per iteration
 }
 
-void Boid::draw_on(sf::RenderWindow& window) const {
+void Boid::drawOn(sf::RenderWindow& window) const {
   sf::CircleShape shape(6, 3);  // sets traingle shape
   shape.setPosition((position.x), (position.y));
   shape.setFillColor(sf::Color::Black);
   window.draw(shape);
 }
 
+//Correctly scales the background
 auto scaleBackground(const sf::RenderWindow& window,
                      const sf::Texture& backgroundTexture) {
   sf::Vector2f windowSize(window.getSize());
@@ -166,13 +167,14 @@ void runSimulation(sf::RenderWindow& window,
                    std::vector<Boid>& flock, const Params& simulation_params,
                    const float max_speed, std::vector<Boid>& flock_view,
                    std::mutex& synchro_tool) {
-  const float edges_width =
-      static_cast<float>(sf::VideoMode::getDesktopMode().width);
-  const float edges_height =
-      static_cast<float>(sf::VideoMode::getDesktopMode().height);
+  const float edges_width = static_cast<float>(window.getSize().x);
+
+  const float edges_height = static_cast<float>(window.getSize().y);
+
   // Ensures that the simulation keeps running while the window stays open
   sf::Event event;
   sf::Sprite backgroundSprite(backgroundTexture);
+  // To ensure the correct size of the backgroud sprite
   backgroundSprite.setScale(scaleBackground(window, backgroundTexture));
 
   while (window.isOpen()) {
@@ -190,7 +192,7 @@ void runSimulation(sf::RenderWindow& window,
       boid.update(simulation_params, flock, max_speed, edges_width,
                   edges_height);
 
-      boid.draw_on(window);
+      boid.drawOn(window);
     }
 
     // The possible lag caused by the stats calculation is reduced by
@@ -264,7 +266,7 @@ Stats calculateStatistics(
 
   // Get distance standard deviation
   stats.sigma_d = std::sqrt(sqrd_deviation / (total_pairs - 1));
-  
+
   return stats;
 }
 

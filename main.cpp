@@ -46,7 +46,7 @@ int main() {
   sf::Texture backgroundTexture;
 
   if (!backgroundTexture.loadFromFile("sky_background.jpg")) {
-    std::cout << "Failed to load background. Simulation aborted";
+    std::cout << "Failed to load background. Simulation aborted\n";
     return 1;
   }
 

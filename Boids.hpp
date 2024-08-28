@@ -53,7 +53,7 @@ class Boid {
 
   const Vec_2d alignment_and_cohesion(const std::vector<Boid>& flock,
                                       const Params& simulation_params) const;
-  void avoid_edges(const float edges_width, const float edges_height);
+  void avoidEdges(const float edges_width, const float edges_height);
 
  public:
   float abs_distance_from(const Boid& boid_j) const;
@@ -65,7 +65,7 @@ class Boid {
   void update(const Params& simulation_params, const std::vector<Boid>& flock,
               const float max_speed, const float edges_width,
               const float edges_height);
-  void draw_on(sf::RenderWindow& window) const;
+  void drawOn(sf::RenderWindow& window) const;
 };
 
 // Aggregate of the statistical values calculated during the simulation along
