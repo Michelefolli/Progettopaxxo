@@ -1,11 +1,14 @@
 # Progettopaxxo
-La cartella relazione contiene il file LaTeX con la relazione che dobbiamo fare.
+Per una descrizione approfondita si rimanda alla relazione
 
-## Guida rapida ai file - Michele
-Boids_ver_2.hpp è l'header del progetto, dentro sono definiti la struct di un vettore bidimensionale, la struct dei boid e la classe di simulazione dello stormo.
+## Guida rapida ai file 
+Boids.hpp è l'header contenente user defined types e tutte dichiarazioni delle funzioni
+necessarie ai fini della simulazione
 
-Boids_ver_2.cpp è il cpp con la definizione delle funzioni all'interno della classe dell'header
+IO_handling.hpp è l'header contenente tutte le dichiarazioni delle funzioni di input/output
 
-sfmlmain.cpp è il file che contiene il main e con esso la renderizzazione tramite sfml. 
+Boids.cpp e IO_handling.cpp contengono tutte le definizioni delle funzioni dei ripettivi .hpp
 
-Mboid.test.cpp è il file che si può usare per eseguire i test delle funzioni
+main.cpp è il file riservato per la funzione main
+
+Boidtest.cpp è il file contente tutti i test
