@@ -1,0 +1,78 @@
+#include "Boids.hpp"
+#include "IO_handling.hpp"
+
+#include <mutex>
+#include <random>
+#include <thread>
+
+
+int main() {
+  const float max_speed = 10;  // Arbitrarily chosen
+  const unsigned int screen_width = sf::VideoMode::getDesktopMode().width;
+  const unsigned int screen_height = sf::VideoMode::getDesktopMode().height;
+
+  // Inizialize key objects
+  Params simulation_params{};
+  int acquisiton_period{};
+  int flock_size{};
+
+  inputData(flock_size, acquisiton_period, simulation_params);
+
+  // Set up the rng infrastructure
+  std::random_device rd;
+  std::default_random_engine generator(rd());
+  std::uniform_real_distribution<float> velocity_distribution(
+      -(max_speed / std::sqrt(2.f)), (max_speed / std::sqrt(2.f)));
+
+  // Randomly generates the flock
+  std::vector<Boid> flock;
+  for (int i = 0; i < flock_size; ++i) {
+    Boid boid(
+        {static_cast<float>(std::rand() % static_cast<int>(screen_width)),
+         static_cast<float>(std::rand() % static_cast<int>(screen_height))},
+
+        {velocity_distribution(generator), velocity_distribution(generator)});
+
+    flock.push_back(boid);
+  }
+
+  // Creates a copy of flock that can be read to minimize lag due to mutex lock
+  auto flock_view = flock;
+  std::vector<Stats> timestamped_stats;
+
+  // Mutex used to ensure consistency in the multithreaded environment
+  std::mutex synchro_tool;
+
+  sf::Texture backgroundTexture;
+
+  if (!backgroundTexture.loadFromFile("sky_background.jpg")) {
+    std::cout << "Failed to load background. Simulation aborted\n";
+    return 1;
+  }
+
+  // Inizialization of the SFML window
+  sf::RenderWindow window(sf::VideoMode(screen_width, screen_height),
+                          "Boids Simulation");  // crea la finestra
+  window.setPosition({0, 0});
+
+  // Set up parallel thread for stats handling
+  std::thread parallel(updateStats, std::cref(flock_view),
+                       std::ref(timestamped_stats), std::ref(acquisiton_period),
+                       std::ref(window), std::ref(synchro_tool));
+
+  // Start simulation
+  runSimulation(window, backgroundTexture, flock, simulation_params, max_speed,
+                flock_view, synchro_tool);
+
+  // As soon as the window is closed the 2 functions stop looping and the thread
+  // are re-joined
+  parallel.join();
+
+  // Call for output handling
+  exportStats(timestamped_stats);
+  exportPlot(timestamped_stats);
+
+  std::cout << "The simulation is complete! \n";
+
+  return 0;
+}
