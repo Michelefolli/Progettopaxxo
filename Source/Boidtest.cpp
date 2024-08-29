@@ -5,20 +5,20 @@
 TEST_CASE("Testing abs_distance_from") {
   SUBCASE("Testing abs_distance_from of a stationary boid from itself") {
     std::vector<Boid> flock;
-    Boid boid_i({201., 201.}, {0., 0.});
+    Boid boid_i({201.f, 201.f}, {0.f, 0.f});
     flock.push_back(boid_i);
     float abs_dist = boid_i.abs_distance_from(boid_i);
-    CHECK(abs_dist == 0);
+    CHECK(abs_dist == 0.f);
   }
 
   SUBCASE("Testing abs_distance_from between two moving boids") {
     std::vector<Boid> flock;
-    Boid boid_i({208., 203.}, {5., 6.});
-    Boid boid_j({204., 206.}, {3., 2.});
+    Boid boid_i({208.f, 203.f}, {5.f, 6.f});
+    Boid boid_j({204.f, 206.f}, {3.f, 2.f});
     flock.push_back(boid_i);
     flock.push_back(boid_j);
     double abs_dist = boid_i.abs_distance_from(boid_j);
-    CHECK(abs_dist == 5.);
+    CHECK(abs_dist == 5.f);
   }
 
   SUBCASE(
@@ -26,12 +26,12 @@ TEST_CASE("Testing abs_distance_from") {
       "values "
       "of position") {
     std::vector<Boid> flock;
-    Boid boid_i({0., 0.}, {2., 3.});
-    Boid boid_j({203., 204.}, {7., 5.});
+    Boid boid_i({0.f, 0.f}, {2.f, 3.f});
+    Boid boid_j({203.f, 204.f}, {7.f, 5.f});
     flock.push_back(boid_i);
     flock.push_back(boid_j);
     double abs_dist = boid_i.abs_distance_from(boid_j);
-    CHECK(abs_dist == doctest::Approx(287.793).epsilon(0.001));
+    CHECK(abs_dist == doctest::Approx(287.793f).epsilon(0.001f));
   }
 }
 
@@ -39,34 +39,34 @@ TEST_CASE(
     "Testing update function indirectly testing separation with three "
     "boids") {
   std::vector<Boid> flock;
-  const float max_speed = 20;
+  const float max_speed = 20.f;
   const float width = static_cast<float>(sf::VideoMode::getDesktopMode().width);
   const float height =
       static_cast<float>(sf::VideoMode::getDesktopMode().height);
-  Boid boid_i({200., 203.}, {1.5, 2.5});
-  Boid boid_j({210., 202.}, {3., 1.});
-  Boid boid_m({204., 215.}, {1., 2.});
+  Boid boid_i({200.f, 203.f}, {1.5f, 2.5f});
+  Boid boid_j({210.f, 202.f}, {3.f, 1.f});
+  Boid boid_m({204.f, 215.f}, {1.f, 2.f});
   flock.push_back(boid_i);
   flock.push_back(boid_j);
   flock.push_back(boid_m);
-  Params params{0.5, 0., 0., 35., 30.};
+  Params params{0.5f, 0.f, 0.f, 35.f, 30.f};
 
   for (auto& boid : flock) {
     boid.update(params, flock, max_speed, width, height);
   }
 
-  CHECK(flock[0].getVelocity().x == -5.5);
-  CHECK(flock[0].getVelocity().y == -3.);
-  CHECK(flock[0].getPosition().x == 194.5);
-  CHECK(flock[0].getPosition().y == 200);
-  CHECK(flock[1].getVelocity().x == 13.75);
-  CHECK(flock[1].getVelocity().y == -4.5);
-  CHECK(flock[1].getPosition().x == 223.75);
-  CHECK(flock[1].getPosition().y == 197.5);
-  CHECK(flock[2].getVelocity().x == -4.125);
-  CHECK(flock[2].getVelocity().y == 18.25);
-  CHECK(flock[2].getPosition().x == 199.875);
-  CHECK(flock[2].getPosition().y == 233.25);
+  CHECK(flock[0].getVelocity().x == -5.5f);
+  CHECK(flock[0].getVelocity().y == -3.f);
+  CHECK(flock[0].getPosition().x == 194.5f);
+  CHECK(flock[0].getPosition().y == 200.f);
+  CHECK(flock[1].getVelocity().x == 13.75f);
+  CHECK(flock[1].getVelocity().y == -4.5f);
+  CHECK(flock[1].getPosition().x == 223.75f);
+  CHECK(flock[1].getPosition().y == 197.5f);
+  CHECK(flock[2].getVelocity().x == -4.125f);
+  CHECK(flock[2].getVelocity().y == 18.25f);
+  CHECK(flock[2].getPosition().x == 199.875f);
+  CHECK(flock[2].getPosition().y == 233.25f);
 }
 
 TEST_CASE(
@@ -76,30 +76,30 @@ TEST_CASE(
   const float width = static_cast<float>(sf::VideoMode::getDesktopMode().width);
   const float height =
       static_cast<float>(sf::VideoMode::getDesktopMode().height);
-  Boid boid_i({300., 303.}, {2., 1.5});
-  Boid boid_j({305., 302.}, {3., 2.5});
-  Boid boid_m({304., 295.}, {1., 2.});
+  Boid boid_i({300.f, 303.f}, {2.f, 1.5f});
+  Boid boid_j({305.f, 302.f}, {3.f, 2.5f});
+  Boid boid_m({304.f, 295.f}, {1.f, 2.f});
   flock.push_back(boid_i);
   flock.push_back(boid_j);
   flock.push_back(boid_m);
-  Params params{0., 0.5, 0., 35., 30.};
+  Params params{0.f, 0.5f, 0.f, 35.f, 30.f};
 
   for (auto& boid : flock) {
     boid.update(params, flock, max_speed, width, height);
   }
 
-  CHECK(flock[0].getVelocity().x == 2.);
-  CHECK(flock[0].getVelocity().y == 1.875);
-  CHECK(flock[0].getPosition().x == 302.);
-  CHECK(flock[0].getPosition().y == 304.875);
-  CHECK(flock[1].getVelocity().x == 2.25);
-  CHECK(flock[1].getVelocity().y == doctest::Approx(2.219).epsilon(0.001));
-  CHECK(flock[1].getPosition().x == 307.25);
-  CHECK(flock[1].getPosition().y == doctest::Approx(304.219).epsilon(0.001));
-  CHECK(flock[2].getVelocity().x == doctest::Approx(1.563).epsilon(0.001));
-  CHECK(flock[2].getVelocity().y == doctest::Approx(2.023).epsilon(0.001));
-  CHECK(flock[2].getPosition().x == doctest::Approx(305.563).epsilon(0.001));
-  CHECK(flock[2].getPosition().y == doctest::Approx(297.023).epsilon(0.001));
+  CHECK(flock[0].getVelocity().x == 2.f);
+  CHECK(flock[0].getVelocity().y == 1.875f);
+  CHECK(flock[0].getPosition().x == 302.f);
+  CHECK(flock[0].getPosition().y == 304.875f);
+  CHECK(flock[1].getVelocity().x == 2.25f);
+  CHECK(flock[1].getVelocity().y == doctest::Approx(2.219f).epsilon(0.001f));
+  CHECK(flock[1].getPosition().x == 307.25f);
+  CHECK(flock[1].getPosition().y == doctest::Approx(304.219f).epsilon(0.001f));
+  CHECK(flock[2].getVelocity().x == doctest::Approx(1.563f).epsilon(0.001f));
+  CHECK(flock[2].getVelocity().y == doctest::Approx(2.023f).epsilon(0.001f));
+  CHECK(flock[2].getPosition().x == doctest::Approx(305.563f).epsilon(0.001f));
+  CHECK(flock[2].getPosition().y == doctest::Approx(297.023f).epsilon(0.001f));
 }
 
 TEST_CASE(
@@ -109,30 +109,30 @@ TEST_CASE(
   const float width = static_cast<float>(sf::VideoMode::getDesktopMode().width);
   const float height =
       static_cast<float>(sf::VideoMode::getDesktopMode().height);
-  Boid boid_i({401., 724.}, {3., 1.});
-  Boid boid_j({404., 726.}, {-5., 2.});
-  Boid boid_m({399., 723.}, {2., -4.});
+  Boid boid_i({401.f, 724.f}, {3.f, 1.f});
+  Boid boid_j({404.f, 726.f}, {-5.f, 2.f});
+  Boid boid_m({399.f, 723.f}, {2.f, -4.f});
   flock.push_back(boid_i);
   flock.push_back(boid_j);
   flock.push_back(boid_m);
-  Params params{0., 0., 0.5, 35., 30.};
+  Params params{0.f, 0.f, 0.5f, 35.f, 30.f};
 
   for (auto& boid : flock) {
     boid.update(params, flock, max_speed, width, height);
   }
 
-  CHECK(flock[0].getVelocity().x == 3.25);
-  CHECK(flock[0].getVelocity().y == 1.25);
-  CHECK(flock[0].getPosition().x == 404.25);
-  CHECK(flock[0].getPosition().y == 725.25);
-  CHECK(flock[1].getVelocity().x == doctest::Approx(-6.189).epsilon(0.001));
-  CHECK(flock[1].getVelocity().y == doctest::Approx(1.063).epsilon(0.001));
-  CHECK(flock[1].getPosition().x == doctest::Approx(397.811).epsilon(0.001));
-  CHECK(flock[1].getPosition().y == doctest::Approx(727.063).epsilon(0.001));
-  CHECK(flock[2].getVelocity().x == doctest::Approx(3.015).epsilon(0.001));
-  CHECK(flock[2].getVelocity().y == doctest::Approx(-2.423).epsilon(0.001));
-  CHECK(flock[2].getPosition().x == doctest::Approx(402.015).epsilon(0.001));
-  CHECK(flock[2].getPosition().y == doctest::Approx(720.578).epsilon(0.001));
+  CHECK(flock[0].getVelocity().x == 3.25f);
+  CHECK(flock[0].getVelocity().y == 1.25f);
+  CHECK(flock[0].getPosition().x == 404.25f);
+  CHECK(flock[0].getPosition().y == 725.25f);
+  CHECK(flock[1].getVelocity().x == doctest::Approx(-6.189f).epsilon(0.001f));
+  CHECK(flock[1].getVelocity().y == doctest::Approx(1.063f).epsilon(0.001f));
+  CHECK(flock[1].getPosition().x == doctest::Approx(397.811f).epsilon(0.001f));
+  CHECK(flock[1].getPosition().y == doctest::Approx(727.063f).epsilon(0.001f));
+  CHECK(flock[2].getVelocity().x == doctest::Approx(3.015f).epsilon(0.001f));
+  CHECK(flock[2].getVelocity().y == doctest::Approx(-2.423f).epsilon(0.001f));
+  CHECK(flock[2].getPosition().x == doctest::Approx(402.015f).epsilon(0.001f));
+  CHECK(flock[2].getPosition().y == doctest::Approx(720.578f).epsilon(0.001f));
 }
 
 TEST_CASE(
@@ -377,19 +377,19 @@ TEST_CASE(
   const float width = static_cast<float>(sf::VideoMode::getDesktopMode().width);
   const float height =
       static_cast<float>(sf::VideoMode::getDesktopMode().height);
-  Boid boid_i({200., 201.}, {5., 8.});
+  Boid boid_i({200.f, 201.f}, {5.f, 8.f});
   flock.push_back(boid_i);
 
-  Params params{0.6, 0.4, 0.5, 35., 30.};
+  Params params{0.6f, 0.4f, 0.5f, 35.f, 30.f};
 
   for (auto& boid : flock) {
     boid.update(params, flock, max_speed, width, height);
   }
 
-  CHECK(flock[0].getVelocity().x == 5.);
-  CHECK(flock[0].getVelocity().y == 8.);
-  CHECK(flock[0].getPosition().x == 205.);
-  CHECK(flock[0].getPosition().y == 209.);
+  CHECK(flock[0].getVelocity().x == 5.f);
+  CHECK(flock[0].getVelocity().y == 8.f);
+  CHECK(flock[0].getPosition().x == 205.f);
+  CHECK(flock[0].getPosition().y == 209.f);
 }
 
 TEST_CASE("Testing d_mean with five distant boids") {
@@ -407,7 +407,7 @@ TEST_CASE("Testing d_mean with five distant boids") {
   flock.push_back(boid_l);
   flock.push_back(boid_m);
   stats = calculateStatistics(flock, start_time);
-  CHECK(stats.d_mean == doctest::Approx(541.537).epsilon(0.001f));
+  CHECK(stats.d_mean == doctest::Approx(541.537f).epsilon(0.001f));
 }
 
 TEST_CASE("Testing sigma_d with five distant boids") {

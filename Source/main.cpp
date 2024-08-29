@@ -1,10 +1,11 @@
-#include "Boids.hpp"
-#include "IO_handling.hpp"
-
+#include <iostream>
 #include <mutex>
 #include <random>
 #include <thread>
+#include <vector>
 
+#include "Boids.hpp"
+#include "IO_handling.hpp"
 
 int main() {
   const float max_speed = 10;  // Arbitrarily chosen
@@ -13,10 +14,10 @@ int main() {
 
   // Inizialize key objects
   Params simulation_params{};
-  int acquisiton_period{};
+  int acquisition_period{};
   int flock_size{};
 
-  inputData(flock_size, acquisiton_period, simulation_params);
+  inputData(flock_size, acquisition_period, simulation_params);
 
   // Set up the rng infrastructure
   std::random_device rd;
@@ -45,7 +46,7 @@ int main() {
 
   sf::Texture backgroundTexture;
 
-  if (!backgroundTexture.loadFromFile("sky_background.jpg")) {
+  if (!backgroundTexture.loadFromFile("assets/sky_background.jpg")) {
     std::cout << "Failed to load background. Simulation aborted\n";
     return 1;
   }
@@ -56,9 +57,9 @@ int main() {
   window.setPosition({0, 0});
 
   // Set up parallel thread for stats handling
-  std::thread parallel(updateStats, std::cref(flock_view),
-                       std::ref(timestamped_stats), std::ref(acquisiton_period),
-                       std::ref(window), std::ref(synchro_tool));
+  std::thread parallel(
+      updateStats, std::cref(flock_view), std::ref(timestamped_stats),
+      std::ref(acquisition_period), std::ref(window), std::ref(synchro_tool));
 
   // Start simulation
   runSimulation(window, backgroundTexture, flock, simulation_params, max_speed,
@@ -72,7 +73,7 @@ int main() {
   exportStats(timestamped_stats);
   exportPlot(timestamped_stats);
 
-  std::cout << "The simulation is complete! \n";
+  std::cout << "\033[96mThe simulation is complete!\033[0m \n";
 
   return 0;
 }

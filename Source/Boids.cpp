@@ -3,14 +3,9 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
-#include <cstdio>
-#include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <mutex>
 #include <numeric>
-#include <random>
-#include <sstream>
 #include <vector>
 
 /*
@@ -151,7 +146,7 @@ void Boid::drawOn(sf::RenderWindow& window) const {
   window.draw(shape);
 }
 
-//Correctly scales the background
+// Correctly scales the background
 auto scaleBackground(const sf::RenderWindow& window,
                      const sf::Texture& backgroundTexture) {
   sf::Vector2f windowSize(window.getSize());

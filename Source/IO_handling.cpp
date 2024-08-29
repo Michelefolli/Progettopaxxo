@@ -1,22 +1,17 @@
 #include "IO_handling.hpp"
 
 #include <algorithm>
-#include <chrono>
-#include <cmath>
 #include <cstdio>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <mutex>
-#include <numeric>
-#include <random>
+#include <limits>
 #include <sstream>
 #include <vector>
 
 /*
  * INPUT HANDLING
-*/
-
+ */
 
 // The significance of the simulation and its statistics is upheld by ensuring
 // the correctness of the inputs
@@ -52,19 +47,27 @@ void inputData(int& flock_size, int& acquisition_period,
     std::cout << "Separation distance: ";
     std::cin >> simulation_params.dist_sep;
 
+    // check for invalid inputs and clears buffer
+    if (std::cin.fail()) {
+      std::cout << '\n';
+      std::cin.clear();
+      std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+      std::cout << "\033[31mInvalid input, please input numbers!\033[0m\n";
+      continue;
+    }
+
     if (!checkParametersValidity(flock_size, acquisition_period,
                                  simulation_params)) {
-      std::cout << "Invalid input, try again\n";
+      std::cout << "\033[31mInvalid input, try again\033[0m\n";
     }
 
   } while (!checkParametersValidity(flock_size, acquisition_period,
                                     simulation_params));
 }
 
-
 /*
  * OUTPUT HANDLING
-*/
+ */
 
 // Uses the same function for naming both .png and .txt files
 std::string namingFile() {
@@ -85,7 +88,7 @@ bool askForTxt() {
     if (txt_option == 0 || txt_option == 1) {
       break;
     } else {
-      std::cout << "Invalid input. Please enter 0 or 1.\n";
+      std::cout << "\033[31mInvalid input. Please enter 0 or 1.\033[0m\n";
     }
   }
   return txt_option;
@@ -96,7 +99,8 @@ void instantiateStatsFile(std::ostringstream& output_str) {
   std::string txt_file_name = namingFile() + ".txt";
   std::ofstream file_output(txt_file_name);
   if (!file_output) {  // Ensures the output pipeline was succesfully opened
-    std::cout << "There was an error in the creation of the file \n";
+    std::cout
+        << "\033[31mThere was an error in the creation of the file\033[0m \n";
   } else
     file_output << output_str.str();
   file_output.close();
@@ -135,7 +139,7 @@ bool askForPng() {
     if (png_option == 0 || png_option == 1) {
       break;
     } else {
-      std::cout << "Invalid input. Please enter 0 or 1.\n";
+      std::cout << "\033[31mInvalid input. Please enter 0 or 1.\033[0m\n";
     }
   }
   return png_option;
@@ -202,7 +206,8 @@ void plotStats(const std::vector<Stats>& timestamped_stats, bool png_option,
     pclose(gnuplotPipe);
 
   } else {
-    std::cout << "Error: Could not open pipe to Gnuplot. \n" << std::endl;
+    std::cout << "\033[31mError: Could not open pipe to Gnuplot.\033[0m \n"
+              << std::endl;
   }
 }
 
@@ -217,4 +222,3 @@ void exportPlot(const std::vector<Stats>& timestamped_stats) {
   // Creates plots and exports if asked
   plotStats(timestamped_stats, png_option, png_file_name);
 }
-

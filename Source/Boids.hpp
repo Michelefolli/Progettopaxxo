@@ -3,10 +3,7 @@
 #include <SFML/Graphics.hpp>
 #include <chrono>
 #include <cmath>
-#include <iostream>
 #include <mutex>
-#include <sstream>
-#include <thread>
 #include <vector>
 
 // Minimal implementation of a 2 dimensional vector with basic algebraic
@@ -47,9 +44,8 @@ class Boid {
   Vec_2d position;
   Vec_2d velocity;
   void limit(const float max_speed);
-  const Vec_2d separation(const std::vector<Boid>& flock,   
-                          const Params& simulation_params)  
-      const;
+  const Vec_2d separation(const std::vector<Boid>& flock,
+                          const Params& simulation_params) const;
 
   const Vec_2d alignment_and_cohesion(const std::vector<Boid>& flock,
                                       const Params& simulation_params) const;
@@ -76,9 +72,7 @@ struct Stats {
   float sigma_v{};  // Velocity standard deviation
   float sigma_d{};  // Distance standard deviation
   float time{};
-  
 };
-
 
 // Functions responsible for running the simulation
 auto scaleBackground(const sf::RenderWindow& window,
@@ -93,13 +87,12 @@ void runSimulation(sf::RenderWindow& window,
 // simuation
 Stats calculateStatistics(
     const std::vector<Boid>& flock_view,
-    const std::chrono::time_point<std::chrono::steady_clock>&
-        start_time);  
+    const std::chrono::time_point<std::chrono::steady_clock>& start_time);
 void fillStatsVector(
     const std::vector<Boid>& flock_view, std::vector<Stats>& timestamped_stats,
     const std::chrono::time_point<std::chrono::steady_clock>& start_time);
 void updateStats(const std::vector<Boid>& flock_view,
-                  std::vector<Stats>& timestamped_stats, int acquisiton_period,
-                  sf::RenderWindow& window, std::mutex& synchro_tool);
+                 std::vector<Stats>& timestamped_stats, int acquisiton_period,
+                 sf::RenderWindow& window, std::mutex& synchro_tool);
 
 #endif
