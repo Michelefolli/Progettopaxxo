@@ -8,7 +8,7 @@ TEST_CASE("Testing abs_distance_from") {
     Boid boid_i({201.f, 201.f}, {0.f, 0.f});
     flock.push_back(boid_i);
     float abs_dist = boid_i.abs_distance_from(boid_i);
-    CHECK(abs_dist == 0.f);
+    CHECK(abs_dist == doctest::Approx(0.f).epsilon(0.001f));
   }
 
   SUBCASE("Testing abs_distance_from between two moving boids") {
@@ -18,7 +18,7 @@ TEST_CASE("Testing abs_distance_from") {
     flock.push_back(boid_i);
     flock.push_back(boid_j);
     double abs_dist = boid_i.abs_distance_from(boid_j);
-    CHECK(abs_dist == 5.f);
+    CHECK(abs_dist == doctest::Approx(5.f).epsilon(0.001f));
   }
 
   SUBCASE(
@@ -55,24 +55,24 @@ TEST_CASE(
     boid.update(params, flock, max_speed, width, height);
   }
 
-  CHECK(flock[0].getVelocity().x == -5.5f);
-  CHECK(flock[0].getVelocity().y == -3.f);
-  CHECK(flock[0].getPosition().x == 194.5f);
-  CHECK(flock[0].getPosition().y == 200.f);
-  CHECK(flock[1].getVelocity().x == 13.75f);
-  CHECK(flock[1].getVelocity().y == -4.5f);
-  CHECK(flock[1].getPosition().x == 223.75f);
-  CHECK(flock[1].getPosition().y == 197.5f);
-  CHECK(flock[2].getVelocity().x == -4.125f);
-  CHECK(flock[2].getVelocity().y == 18.25f);
-  CHECK(flock[2].getPosition().x == 199.875f);
-  CHECK(flock[2].getPosition().y == 233.25f);
+  CHECK(flock[0].getVelocity().x == doctest::Approx(-5.5f).epsilon(0.001f));
+  CHECK(flock[0].getVelocity().y == doctest::Approx(-3.f).epsilon(0.001f));
+  CHECK(flock[0].getPosition().x == doctest::Approx(194.5f).epsilon(0.001f));
+  CHECK(flock[0].getPosition().y == doctest::Approx(200.f).epsilon(0.001f));
+  CHECK(flock[1].getVelocity().x == doctest::Approx(13.75f).epsilon(0.001f));
+  CHECK(flock[1].getVelocity().y == doctest::Approx(-4.5f).epsilon(0.001f));
+  CHECK(flock[1].getPosition().x == doctest::Approx(223.75f).epsilon(0.001f));
+  CHECK(flock[1].getPosition().y == doctest::Approx(197.5f).epsilon(0.001f));
+  CHECK(flock[2].getVelocity().x == doctest::Approx(-4.125f).epsilon(0.001f));
+  CHECK(flock[2].getVelocity().y == doctest::Approx(18.25f).epsilon(0.001f));
+  CHECK(flock[2].getPosition().x == doctest::Approx(199.875f).epsilon(0.001f));
+  CHECK(flock[2].getPosition().y == doctest::Approx(233.25f).epsilon(0.001f));
 }
 
 TEST_CASE(
     "Testing update function indirectly testing alignment with three boids") {
   std::vector<Boid> flock;
-  const float max_speed = 10;
+  const float max_speed = 10.f;
   const float width = static_cast<float>(sf::VideoMode::getDesktopMode().width);
   const float height =
       static_cast<float>(sf::VideoMode::getDesktopMode().height);
@@ -88,13 +88,13 @@ TEST_CASE(
     boid.update(params, flock, max_speed, width, height);
   }
 
-  CHECK(flock[0].getVelocity().x == 2.f);
-  CHECK(flock[0].getVelocity().y == 1.875f);
-  CHECK(flock[0].getPosition().x == 302.f);
-  CHECK(flock[0].getPosition().y == 304.875f);
-  CHECK(flock[1].getVelocity().x == 2.25f);
+  CHECK(flock[0].getVelocity().x == doctest::Approx(2.f).epsilon(0.001f));
+  CHECK(flock[0].getVelocity().y == doctest::Approx(1.875f).epsilon(0.001f));
+  CHECK(flock[0].getPosition().x == doctest::Approx(302.f).epsilon(0.001f));
+  CHECK(flock[0].getPosition().y == doctest::Approx(304.875f).epsilon(0.001f));
+  CHECK(flock[1].getVelocity().x == doctest::Approx(2.25f).epsilon(0.001f));
   CHECK(flock[1].getVelocity().y == doctest::Approx(2.219f).epsilon(0.001f));
-  CHECK(flock[1].getPosition().x == 307.25f);
+  CHECK(flock[1].getPosition().x == doctest::Approx(307.25f).epsilon(0.001f));
   CHECK(flock[1].getPosition().y == doctest::Approx(304.219f).epsilon(0.001f));
   CHECK(flock[2].getVelocity().x == doctest::Approx(1.563f).epsilon(0.001f));
   CHECK(flock[2].getVelocity().y == doctest::Approx(2.023f).epsilon(0.001f));
@@ -105,7 +105,7 @@ TEST_CASE(
 TEST_CASE(
     "Testing update function indirectly testing cohesion with three boids") {
   std::vector<Boid> flock;
-  const float max_speed = 10;
+  const float max_speed = 10.f;
   const float width = static_cast<float>(sf::VideoMode::getDesktopMode().width);
   const float height =
       static_cast<float>(sf::VideoMode::getDesktopMode().height);
@@ -121,10 +121,10 @@ TEST_CASE(
     boid.update(params, flock, max_speed, width, height);
   }
 
-  CHECK(flock[0].getVelocity().x == 3.25f);
-  CHECK(flock[0].getVelocity().y == 1.25f);
-  CHECK(flock[0].getPosition().x == 404.25f);
-  CHECK(flock[0].getPosition().y == 725.25f);
+  CHECK(flock[0].getVelocity().x == doctest::Approx(3.25f).epsilon(0.001f));
+  CHECK(flock[0].getVelocity().y == doctest::Approx(1.25f).epsilon(0.001f));
+  CHECK(flock[0].getPosition().x == doctest::Approx(404.25f).epsilon(0.001f));
+  CHECK(flock[0].getPosition().y == doctest::Approx(725.25f).epsilon(0.001f));
   CHECK(flock[1].getVelocity().x == doctest::Approx(-6.189f).epsilon(0.001f));
   CHECK(flock[1].getVelocity().y == doctest::Approx(1.063f).epsilon(0.001f));
   CHECK(flock[1].getPosition().x == doctest::Approx(397.811f).epsilon(0.001f));
@@ -321,7 +321,7 @@ TEST_CASE(
     boid.update(params, flock, max_speed, width, height);
   }
 
-  CHECK(flock[0].getVelocity().x == 5.);
+  CHECK(flock[0].getVelocity().x == doctest::Approx(5.f).epsilon(0.001f));
   CHECK(flock[0].getVelocity().y == doctest::Approx(-0.6f).epsilon(0.001f));
   CHECK(flock[0].getPosition().x == doctest::Approx(410.f).epsilon(0.001f));
   CHECK(flock[0].getPosition().y == doctest::Approx(200.4f).epsilon(0.001f));
@@ -373,7 +373,7 @@ TEST_CASE(
     "Testing update function indirectly testing separation and alignment and "
     "cohesion with one single boid") {
   std::vector<Boid> flock;
-  const float max_speed = 20;
+  const float max_speed = 20.f;
   const float width = static_cast<float>(sf::VideoMode::getDesktopMode().width);
   const float height =
       static_cast<float>(sf::VideoMode::getDesktopMode().height);
@@ -386,10 +386,10 @@ TEST_CASE(
     boid.update(params, flock, max_speed, width, height);
   }
 
-  CHECK(flock[0].getVelocity().x == 5.f);
-  CHECK(flock[0].getVelocity().y == 8.f);
-  CHECK(flock[0].getPosition().x == 205.f);
-  CHECK(flock[0].getPosition().y == 209.f);
+  CHECK(flock[0].getVelocity().x == doctest::Approx(5.f).epsilon(0.001f));
+  CHECK(flock[0].getVelocity().y == doctest::Approx(8.f).epsilon(0.001f));
+  CHECK(flock[0].getPosition().x == doctest::Approx(205.f).epsilon(0.001f));
+  CHECK(flock[0].getPosition().y == doctest::Approx(209.f).epsilon(0.001f));
 }
 
 TEST_CASE("Testing d_mean with five distant boids") {
