@@ -12,14 +12,14 @@ int main() {
   const unsigned int screen_width = sf::VideoMode::getDesktopMode().width;
   const unsigned int screen_height = sf::VideoMode::getDesktopMode().height;
 
-  // Inizialize key objects
+  // Initializes key objects
   Params simulation_params{};
   int acquisition_period{};
   int flock_size{};
 
   inputData(flock_size, acquisition_period, simulation_params);
 
-  // Set up the rng infrastructure
+  // Sets up the rng infrastructure
   std::random_device rd;
   std::default_random_engine generator(rd());
   std::uniform_real_distribution<float> velocity_distribution(
@@ -44,6 +44,7 @@ int main() {
   // Mutex used to ensure consistency in the multithreaded environment
   std::mutex synchro_tool;
 
+  // Ensures the background is correctly loaded
   sf::Texture backgroundTexture;
 
   if (!backgroundTexture.loadFromFile("assets/sky_background.jpg")) {
@@ -51,17 +52,17 @@ int main() {
     return 1;
   }
 
-  // Inizialization of the SFML window
+  // Initialization of the SFML window
   sf::RenderWindow window(sf::VideoMode(screen_width, screen_height),
                           "Boids Simulation");  // crea la finestra
   window.setPosition({0, 0});
 
-  // Set up parallel thread for stats handling
+  // Sets up parallel thread for stats handling
   std::thread parallel(
       updateStats, std::cref(flock_view), std::ref(timestamped_stats),
       std::ref(acquisition_period), std::ref(window), std::ref(synchro_tool));
 
-  // Start simulation
+  // Starts simulation
   runSimulation(window, backgroundTexture, flock, simulation_params, max_speed,
                 flock_view, synchro_tool);
 
@@ -69,7 +70,7 @@ int main() {
   // are re-joined
   parallel.join();
 
-  // Call for output handling
+  // Calls for output handling
   exportStats(timestamped_stats);
   exportPlot(timestamped_stats);
 

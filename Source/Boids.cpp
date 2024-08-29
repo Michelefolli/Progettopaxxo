@@ -32,17 +32,17 @@ float Vec_2d::norm() const { return std::sqrt(x * x + y * y); }
 // 0.25 and the repulsive range 100. are arbitrary.
 void Boid::avoidEdges(const float edges_width, const float edges_height) {
   float repulsive_range = 100.f;
-  auto distance_from_border = velocity.norm();
+  auto velocity_module = velocity.norm();
   auto epsilon = std::numeric_limits<
       float>::epsilon();  // division and multiplication by zero can lead to
                           // NaN errors hence the need for small epsilons
 
   if (position.x < repulsive_range) {
-    velocity.x += (distance_from_border + epsilon) *
+    velocity.x += (velocity_module + epsilon) *
                   (1 / (std::pow((std::abs(position.x)), 0.25f) + epsilon));
   }
   if (position.y < repulsive_range) {
-    velocity.y += (distance_from_border + epsilon) *
+    velocity.y += (velocity_module + epsilon) *
                   (1 / (std::pow((std::abs(position.y)), 0.25f) + epsilon));
   }
   // the "-" sign is necessary produce the negative velocity components for
@@ -50,11 +50,11 @@ void Boid::avoidEdges(const float edges_width, const float edges_height) {
   // "-1"
   if (position.x > (edges_width - repulsive_range)) {
     velocity.x +=
-        (distance_from_border + epsilon) * (-1) *
+        (velocity_module + epsilon) * (-1) *
         (1 / (std::pow((std::abs(edges_width - position.x)), 0.25f) + epsilon));
   }
   if (position.y > (edges_height - repulsive_range)) {
-    velocity.y += (distance_from_border + epsilon) * (-1) *
+    velocity.y += (velocity_module + epsilon) * (-1) *
                   (1 / (std::pow((std::abs(edges_height - position.y)), 0.25f) +
                         epsilon));
   };
@@ -123,7 +123,7 @@ const Vec_2d Boid::alignment_and_cohesion(
 const Vec_2d& Boid::getPosition() const { return position; }
 const Vec_2d& Boid::getVelocity() const { return velocity; }
 
-// Streamlines the process of updating the Boids' coordinates by applyng all
+// Streamlines the process of updating the Boids' coordinates by applying all
 // of the laws consecutively.
 void Boid::update(const Params& simulation_params,
                   const std::vector<Boid>& flock, const float max_speed,
@@ -166,14 +166,14 @@ void runSimulation(sf::RenderWindow& window,
 
   const float edges_height = static_cast<float>(window.getSize().y);
 
-  // Ensures that the simulation keeps running while the window stays open
   sf::Event event;
   sf::Sprite backgroundSprite(backgroundTexture);
   // To ensure the correct size of the backgroud sprite
   backgroundSprite.setScale(scaleBackground(window, backgroundTexture));
 
+  // Ensures that the simulation keeps running while the window stays open
   while (window.isOpen()) {
-    // Enables the ability to close the window
+    // Check is the window was closed
     while (window.pollEvent(event)) {
       if (event.type == sf::Event::Closed) {
         window.close();
@@ -197,7 +197,7 @@ void runSimulation(sf::RenderWindow& window,
     flock_view = flock;
     synchro_tool.unlock();
 
-    // Displays the boid on the window
+    // Displays what was drawn on the window
     window.display();
   }
 }
@@ -205,7 +205,7 @@ void runSimulation(sf::RenderWindow& window,
 Stats calculateStatistics(
     const std::vector<Boid>& flock_view,
     const std::chrono::time_point<std::chrono::steady_clock>& start_time) {
-  Stats stats{};  // Proper initialization of the Stats instance
+  Stats stats{};  // Proper initialization of the Stats' instance
   std::chrono::time_point current_time =
       std::chrono::steady_clock::now();  // gets current time
   auto time_span = std::chrono::duration_cast<std::chrono::duration<float>>(
@@ -242,24 +242,24 @@ Stats calculateStatistics(
     }
   }
 
-  // Get the total number of pairs
+  // Gets the total number of pairs
   float total_pairs = static_cast<float>(pairwise_distances.size());
 
-  // Sum all of the pairwise distances
+  // Sums all of the pairwise distances
   float dist_sum = std::accumulate(pairwise_distances.begin(),
                                    pairwise_distances.end(), 0.f);
 
-  // Get mean distance
+  // Gets mean distance
   stats.d_mean = dist_sum / total_pairs;
 
-  // Find the sum of all the squared deviation
+  // Finds the sum of all the squared deviation
   float sqrd_deviation = std::accumulate(
       pairwise_distances.begin(), pairwise_distances.end(), 0.f,
       [&stats](float total_dev, const float& dist_ij) {
         return total_dev += std::pow((dist_ij - stats.d_mean), 2.f);
       });
 
-  // Get distance standard deviation
+  // Gets distance standard deviation
   stats.sigma_d = std::sqrt(sqrd_deviation / (total_pairs - 1));
 
   return stats;

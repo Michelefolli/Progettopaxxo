@@ -30,6 +30,8 @@ bool checkParametersValidity(int flock_size, int acquisition_period,
 // simulation's key parameters
 void inputData(int& flock_size, int& acquisition_period,
                Params& simulation_params) {
+  // Using a do while statement to enter the parameters before the while
+  // input status is evaluated to avoid early "Invalid input" outputs
   do {
     std::cout << "Input the required data \n";
     std::cout << "Number of Boids: ";
@@ -47,7 +49,7 @@ void inputData(int& flock_size, int& acquisition_period,
     std::cout << "Separation distance: ";
     std::cin >> simulation_params.dist_sep;
 
-    // check for invalid inputs and clears buffer
+    // Checks for invalid inputs and clears buffer
     if (std::cin.fail()) {
       std::cout << '\n';
       std::cin.clear();
@@ -56,6 +58,7 @@ void inputData(int& flock_size, int& acquisition_period,
       continue;
     }
 
+    // Checks input status to send error message
     if (!checkParametersValidity(flock_size, acquisition_period,
                                  simulation_params)) {
       std::cout << "\033[31mInvalid input, try again\033[0m\n";
@@ -120,7 +123,7 @@ void exportStats(const std::vector<Stats>& timestamped_statistics) {
                              << stat.time << "\n";
                 });
 
-  if (askForTxt()) {  // Ask for permission to save the stats before calling
+  if (askForTxt()) {  // Asks for permission to save the stats before calling
                       // the function
     instantiateStatsFile(output_str);
   }
@@ -147,10 +150,10 @@ bool askForPng() {
 
 void plotStats(const std::vector<Stats>& timestamped_stats, bool png_option,
                const std::string& png_file_name) {
-  // Open pipeline
+  // Opens pipeline
   FILE* gnuplotPipe = popen("gnuplot -persistent", "w");
 
-  if (gnuplotPipe) {  // Ensure the pipeline was correctly opened
+  if (gnuplotPipe) {  // Ensures the pipeline was correctly opened
 
     if (png_option) {  // Creates .png file if asked to
       fprintf(
@@ -159,11 +162,11 @@ void plotStats(const std::vector<Stats>& timestamped_stats, bool png_option,
       fprintf(gnuplotPipe, "set output '%s'\n", png_file_name.c_str());
     }
 
-    // Set up the 2x2 grid of plots
+    // Sets up the 2x2 grid of plots
     fprintf(gnuplotPipe,
             "set multiplot layout 2,2 title 'Statistics Over Time'\n");
 
-    // Plot v_mean vs time
+    // Plots v_mean vs time
     fprintf(gnuplotPipe, "set title 'v\\_mean vs time'\n");
     fprintf(gnuplotPipe, "plot '-' with lines title 'v\\_mean'\n");
     std::for_each(timestamped_stats.begin(), timestamped_stats.end(),
@@ -172,7 +175,7 @@ void plotStats(const std::vector<Stats>& timestamped_stats, bool png_option,
                   });
     fprintf(gnuplotPipe, "e\n");
 
-    // Plot sigma_v vs time
+    // Plots sigma_v vs time
     fprintf(gnuplotPipe, "set title 'sigma\\_v vs time'\n");
     fprintf(gnuplotPipe, "plot '-' with lines title 'sigma\\_v'\n");
     std::for_each(timestamped_stats.begin(), timestamped_stats.end(),
@@ -181,7 +184,7 @@ void plotStats(const std::vector<Stats>& timestamped_stats, bool png_option,
                   });
     fprintf(gnuplotPipe, "e\n");
 
-    // Plot d_mean vs time
+    // Plots d_mean vs time
     fprintf(gnuplotPipe, "set title 'd\\_mean vs time'\n");
     fprintf(gnuplotPipe, "plot '-' with lines title 'd\\_mean'\n");
     std::for_each(timestamped_stats.begin(), timestamped_stats.end(),
@@ -190,7 +193,7 @@ void plotStats(const std::vector<Stats>& timestamped_stats, bool png_option,
                   });
     fprintf(gnuplotPipe, "e\n");
 
-    // Plot sigma_d vs time
+    // Plots sigma_d vs time
     fprintf(gnuplotPipe, "set title 'sigma\\_d vs time'\n");
     fprintf(gnuplotPipe, "plot '-' with lines title 'sigma\\_d'\n");
     std::for_each(timestamped_stats.begin(), timestamped_stats.end(),
@@ -199,10 +202,10 @@ void plotStats(const std::vector<Stats>& timestamped_stats, bool png_option,
                   });
     fprintf(gnuplotPipe, "e\n");
 
-    // End multiplot
+    // Ends multiplot
     fprintf(gnuplotPipe, "unset multiplot\n");
 
-    // Close the pipe to Gnuplot
+    // Closes the pipe to Gnuplot
     pclose(gnuplotPipe);
 
   } else {
