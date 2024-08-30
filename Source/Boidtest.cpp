@@ -302,7 +302,7 @@ TEST_CASE(
 }
 
 TEST_CASE(
-    "Testing update function indirecty testing separation and alignment and "
+    "Testing update function indirectly testing separation and alignment and "
     "cohesion with reiteration and limit") {
   std::vector<Boid> flock;
   const float max_speed = 10.f;

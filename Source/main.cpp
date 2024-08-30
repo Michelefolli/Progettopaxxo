@@ -54,7 +54,7 @@ int main() {
 
   // Initialization of the SFML window
   sf::RenderWindow window(sf::VideoMode(screen_width, screen_height),
-                          "Boids Simulation");  // crea la finestra
+                          "Boids Simulation");  
   window.setPosition({0, 0});
 
   // Sets up parallel thread for stats handling
