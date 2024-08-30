@@ -10,7 +10,7 @@
 // operations
 struct Vec_2d {
   Vec_2d(float x_val, float y_val)  // Constructor used to ensure the proper
-      : x(x_val), y(y_val) {}       // initialization of every Vec_2d object
+      : x{x_val}, y{y_val} {}       // initialization of every Vec_2d object
   float x;
   float y;
   // algebraic operations
@@ -55,7 +55,7 @@ class Boid {
   float abs_distance_from(const Boid& boid_j) const;
   Boid(Vec_2d position_val,  // Constructor to ensure the correct initialization
        Vec_2d velocity_val)  // of every BOID object
-      : position(position_val), velocity(velocity_val) {}
+      : position{position_val}, velocity{velocity_val} {}
   const Vec_2d& getPosition() const;
   const Vec_2d& getVelocity() const;
   void update(const Params& simulation_params, const std::vector<Boid>& flock,
