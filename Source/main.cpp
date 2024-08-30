@@ -28,13 +28,13 @@ int main() {
   // Randomly generates the flock
   std::vector<Boid> flock;
   for (int i = 0; i < flock_size; ++i) {
-    Boid boid(
+    Boid boid_i(
         {static_cast<float>(std::rand() % static_cast<int>(screen_width)),
          static_cast<float>(std::rand() % static_cast<int>(screen_height))},
 
         {velocity_distribution(generator), velocity_distribution(generator)});
 
-    flock.push_back(boid);
+    flock.push_back(boid_i);
   }
 
   // Creates a copy of flock that can be read to minimize lag due to mutex lock

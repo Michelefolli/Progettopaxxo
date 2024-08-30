@@ -17,7 +17,7 @@
 // the correctness of the inputs
 bool checkParametersValidity(int flock_size, int acquisition_period,
                              Params& simulation_params) {
-  if (flock_size > 1 && acquisition_period > 10 && simulation_params.sep > 0 &&
+  if (flock_size > 1 && acquisition_period >= 10 && simulation_params.sep > 0 &&
       0 < simulation_params.alig && simulation_params.alig < 1 &&
       simulation_params.cohes > 0 && 0 < simulation_params.dist_sep &&
       simulation_params.dist_sep < simulation_params.dist) {
