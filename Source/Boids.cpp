@@ -140,7 +140,7 @@ void Boid::update(const Params& simulation_params,
 }
 
 void Boid::drawOn(sf::RenderWindow& window) const {
-  sf::CircleShape shape(6, 3);  // sets traingle shape
+  sf::CircleShape shape(6, 3);  // sets triangle shape
   shape.setPosition((position.x), (position.y));
   shape.setFillColor(sf::Color::Black);
   window.draw(shape);
@@ -173,7 +173,7 @@ void runSimulation(sf::RenderWindow& window,
 
   // Ensures that the simulation keeps running while the window stays open
   while (window.isOpen()) {
-    // Check is the window was closed
+    // Check if the window was closed
     while (window.pollEvent(event)) {
       if (event.type == sf::Event::Closed) {
         window.close();
@@ -286,7 +286,7 @@ void updateStats(const std::vector<Boid>& flock_view,
     if (current_time - last_update_time >=
         std::chrono::milliseconds(acquisiton_period)) {
       last_update_time =
-          current_time;  // miantains the if statement proper inner working
+          current_time;  // maintains the if statement proper inner working
       synchro_tool.lock();
       fillStatsVector(flock_view, timestamped_stats, start_time);
       synchro_tool.unlock();

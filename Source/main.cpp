@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "Boids.hpp"
-#include "IO_handling.hpp"
+#include "IOhandling.hpp"
 
 int main() {
   const float max_speed = 10;  // Arbitrarily chosen
