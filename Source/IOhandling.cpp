@@ -101,7 +101,7 @@ bool askForTxt() {
 void instantiateStatsFile(std::ostringstream& output_str) {
   std::string txt_file_name = namingFile() + ".txt";
   std::ofstream file_output(txt_file_name);
-  if (!file_output) {  // Ensures the output pipeline was succesfully opened
+  if (!file_output) {  // Ensures the output pipeline was successfully opened
     std::cout
         << "\033[31mThere was an error in the creation of the file\033[0m \n";
   } else
