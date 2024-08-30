@@ -8,7 +8,7 @@
 #include "IOhandling.hpp"
 
 int main() {
-  const float max_speed = 10;  // Arbitrarily chosen
+  const float max_speed = 10.f;  // Arbitrarily chosen
   const unsigned int screen_width = sf::VideoMode::getDesktopMode().width;
   const unsigned int screen_height = sf::VideoMode::getDesktopMode().height;
 

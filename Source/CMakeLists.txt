@@ -24,13 +24,13 @@ string(APPEND CMAKE_EXE_LINKER_FLAGS_DEBUG " -fsanitize=address,undefined -fno-o
 #   le dipendenze vengono identificate automaticamente
 find_package(SFML 2.5 COMPONENTS graphics REQUIRED)
 
-add_executable(Project_PAXO main.cpp Boids.cpp IO_handling.cpp)
+add_executable(Project_PAXO main.cpp Boids.cpp IOhandling.cpp)
 target_link_libraries(Project_PAXO PRIVATE sfml-graphics)
 
 # se il testing e' abilitato...
 #   per disabilitare il testing, passare -DBUILD_TESTING=OFF a cmake durante la fase di configurazione
 if (BUILD_TESTING)
-    add_executable(Boid_test Boidtest.cpp Boids.cpp IO_handling.cpp)
+    add_executable(Boid_test Boidtest.cpp Boids.cpp IOhandling.cpp)
     target_link_libraries(Boid_test PRIVATE sfml-graphics)
     add_test(NAME Boid_test COMMAND Boid_test)  
 # aggiungi l'eseguibile all.t
